@@ -1,0 +1,136 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A30
+      name: Apartment_30
+      category: FamilyWithKids
+      rooms:
+      - id: R301
+        name: Kitchen
+        devices:
+        - id: D3011
+          name: KitchenSmokeSensor_A30
+          type: smoke_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A30_KT_SMOKE
+            name: SMOKE_DETECTED
+        - id: D3012
+          name: KitchenExhaustFan_A30
+          type: exhaust_fan
+          platform: openHAB
+          capabilities:
+          - id: CAP_A30_KT_FAN
+            name: POWER
+          states:
+          - id: ST_A30_KT_FAN
+            name: FAN_POWER
+        - id: D3013
+          name: KitchenLight_A30
+          type: smart_light
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A30_KT_LIGHT
+            name: POWER
+          states:
+          - id: ST_A30_KT_LIGHT
+            name: LIGHT_POWER
+        - id: D3014
+          name: KitchenMotionSensor_A30
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A30_KT_MOTION
+            name: MOTION_DETECTED
+semantics:
+  affects:
+  - from_capability_id: CAP_A30_KT_FAN
+    to_state_id: ST_A30_KT_FAN
+    note: Fan actuation changes fan state.
+  - from_capability_id: CAP_A30_KT_LIGHT
+    to_state_id: ST_A30_KT_LIGHT
+    note: Light actuation changes light state.
+evars: []
+contexts: []
+states: []
+rules:
+- id: R_A30_KT_1
+  name: Smoke Detection Fan
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A30
+  description: Turns on the kitchen exhaust fan when smoke is detected.
+  triggers:
+  - id: T_A30_KT_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A30_KT_SMOKE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A30_KT_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3012
+    targets:
+    - kind: Capability
+      id: CAP_A30_KT_FAN
+      role: ACTUATE
+- id: R_A30_KT_2
+  name: Kitchen Motion Light
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A30
+  description: Turns on kitchen light when motion is detected.
+  triggers:
+  - id: T_A30_KT_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A30_KT_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A30_KT_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3013
+    targets:
+    - kind: Capability
+      id: CAP_A30_KT_LIGHT
+      role: ACTUATE
+- id: R_A30_KT_3
+  name: Smoke Alert Light
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A30
+  description: Turns on kitchen light when smoke detected to aid evacuation.
+  triggers:
+  - id: T_A30_KT_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A30_KT_SMOKE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A30_KT_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3013
+    targets:
+    - kind: Capability
+      id: CAP_A30_KT_LIGHT
+      role: ACTUATE

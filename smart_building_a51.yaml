@@ -1,0 +1,142 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A51
+      name: Apartment_51
+      category: FamilyWithKids
+      rooms:
+      - id: R511
+        name: LaundryRoom
+        devices:
+        - id: D5111
+          name: WashingMachine_A51
+          type: smart_washer
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A51_LD_WASHER
+            name: POWER
+          states:
+          - id: ST_A51_LD_WASHER
+            name: WASHER_STATE
+        - id: D5112
+          name: SmartDryer_A51
+          type: smart_dryer
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A51_LD_DRYER
+            name: POWER
+          states:
+          - id: ST_A51_LD_DRYER
+            name: DRYER_STATE
+        - id: D5113
+          name: LeakSensor_A51
+          type: water_leak_sensor
+          platform: openHAB
+          states:
+          - id: ST_A51_LD_LEAK
+            name: LEAK_DETECTED
+        - id: D5114
+          name: WaterValve_A51
+          type: water_valve
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A51_LD_VALVE
+            name: VALVE_CONTROL
+          states:
+          - id: ST_A51_LD_VALVE
+            name: VALVE_STATE
+semantics:
+  affects:
+  - from_capability_id: CAP_A51_LD_WASHER
+    to_state_id: ST_A51_LD_WASHER
+    note: Washer actuation changes washer state.
+  - from_capability_id: CAP_A51_LD_DRYER
+    to_state_id: ST_A51_LD_DRYER
+    note: Dryer actuation changes dryer state.
+  - from_capability_id: CAP_A51_LD_VALVE
+    to_state_id: ST_A51_LD_VALVE
+    note: Valve actuation changes valve state.
+evars: []
+contexts: []
+states: []
+rules:
+- id: R_A51_LD_1
+  name: Leak Detection Stop Water
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A51
+  description: Closes water valve when leak is detected to prevent flooding.
+  triggers:
+  - id: T_A51_LD_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A51_LD_LEAK
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A51_LD_1
+    type: capability_actuation
+    action: CLOSE
+    applies_to_device_id: D5114
+    targets:
+    - kind: Capability
+      id: CAP_A51_LD_VALVE
+      role: ACTUATE
+- id: R_A51_LD_2
+  name: Leak Stop Washer
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A51
+  description: Stops washing machine when leak detected.
+  triggers:
+  - id: T_A51_LD_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A51_LD_LEAK
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A51_LD_2
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D5111
+    targets:
+    - kind: Capability
+      id: CAP_A51_LD_WASHER
+      role: ACTUATE
+- id: R_A51_LD_3
+  name: Washer Done Start Dryer
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A51
+  description: Starts dryer when washer finishes its cycle.
+  triggers:
+  - id: T_A51_LD_3
+    type: state
+    operator: ==
+    value: COMPLETE
+    targets:
+    - kind: State
+      id: ST_A51_LD_WASHER
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A51_LD_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D5112
+    targets:
+    - kind: Capability
+      id: CAP_A51_LD_DRYER
+      role: ACTUATE

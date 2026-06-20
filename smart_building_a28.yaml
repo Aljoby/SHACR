@@ -1,0 +1,133 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A28
+      name: Apartment_28
+      category: YoungProfessional
+      rooms:
+      - id: R281
+        name: Bedroom
+        devices:
+        - id: D2811
+          name: BedroomLight_A28
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A28_BR_LIGHT
+            name: POWER
+          states:
+          - id: ST_A28_BR_LIGHT
+            name: LIGHT_POWER
+        - id: D2812
+          name: BedroomBlinds_A28
+          type: smart_blinds
+          platform: openHAB
+          capabilities:
+          - id: CAP_A28_BR_BLINDS
+            name: BLIND_CONTROL
+          states:
+          - id: ST_A28_BR_BLINDS
+            name: BLIND_POSITION
+        - id: D2813
+          name: BedroomAlarmClock_A28
+          type: alarm_clock
+          platform: SmartThings
+          states:
+          - id: ST_A28_BR_ALARM_TIME
+            name: ALARM_TRIGGERED
+semantics:
+  affects:
+  - from_capability_id: CAP_A28_BR_LIGHT
+    to_state_id: ST_A28_BR_LIGHT
+    note: Light power actuation changes bedroom light state.
+  - from_capability_id: CAP_A28_BR_BLINDS
+    to_state_id: ST_A28_BR_BLINDS
+    note: Blind actuation changes blind position state.
+evars: []
+contexts:
+- id: CTX_A28_NIGHT
+  name: Night
+  scope: apartment
+  scope_id: A28
+states: []
+rules:
+- id: R_A28_BR_1
+  name: Wake Up Light
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A28
+  description: Turns on bedroom light when alarm clock triggers in the morning.
+  triggers:
+  - id: T_A28_BR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A28_BR_ALARM_TIME
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A28_BR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D2811
+    targets:
+    - kind: Capability
+      id: CAP_A28_BR_LIGHT
+      role: ACTUATE
+- id: R_A28_BR_2
+  name: Wake Up Blinds Open
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A28
+  description: Opens bedroom blinds when alarm clock triggers to allow natural light.
+  triggers:
+  - id: T_A28_BR_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A28_BR_ALARM_TIME
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A28_BR_2
+    type: capability_actuation
+    action: OPEN
+    applies_to_device_id: D2812
+    targets:
+    - kind: Capability
+      id: CAP_A28_BR_BLINDS
+      role: ACTUATE
+- id: R_A28_BR_3
+  name: Night Blinds Close
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A28
+  description: Closes bedroom blinds at night for privacy.
+  triggers: []
+  conditions:
+  - id: C_A28_BR_3
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A28_NIGHT
+      role: CHECK
+  actions:
+  - id: A_A28_BR_3
+    type: capability_actuation
+    action: CLOSE
+    applies_to_device_id: D2812
+    targets:
+    - kind: Capability
+      id: CAP_A28_BR_BLINDS
+      role: ACTUATE

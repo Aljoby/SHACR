@@ -1,0 +1,115 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A67
+      name: Apartment_67
+      category: YoungProfessional
+      rooms:
+      - id: R671
+        name: GuestRoom
+        devices:
+        - id: D671
+          name: GuestRoomLight_A67
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A67_GR_LIGHT
+            name: POWER
+          states:
+          - id: ST_A67_GR_LIGHT_POWER
+            name: LIGHT_POWER
+        - id: D672
+          name: GuestRoomDoorSensor_A67
+          type: door_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A67_GR_DOOR_OPEN
+            name: DOOR_OPEN
+        - id: D673
+          name: GuestRoomThermostat_A67
+          type: thermostat
+          platform: openHAB
+          capabilities:
+          - id: CAP_A67_GR_THERMOSTAT
+            name: SET_TEMP
+          states:
+          - id: ST_A67_GR_TEMP_SETPOINT
+            name: TEMP_SETPOINT
+semantics:
+  affects:
+  - from_capability_id: CAP_A67_GR_LIGHT
+    to_state_id: ST_A67_GR_LIGHT_POWER
+    note: Light power actuation changes light state.
+  - from_capability_id: CAP_A67_GR_THERMOSTAT
+    to_state_id: ST_A67_GR_TEMP_SETPOINT
+    note: Thermostat actuation changes temperature setpoint.
+contexts:
+- id: CTX_A67_GUEST_MODE
+  name: GuestMode
+  scope: apartment
+  scope_id: A67
+evars: []
+states: []
+rules:
+- id: R_A67_GR_1
+  name: Guest Welcome Light
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A67
+  description: Turns on the guest room light when the door is opened in guest mode.
+  triggers:
+  - id: T_A67_GR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A67_GR_DOOR_OPEN
+      role: OBSERVE
+  conditions:
+  - id: C_A67_GR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A67_GUEST_MODE
+      role: CHECK
+  actions:
+  - id: A_A67_GR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D671
+    targets:
+    - kind: Capability
+      id: CAP_A67_GR_LIGHT
+      role: ACTUATE
+- id: R_A67_GR_2
+  name: Guest Comfort Setpoint
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A67
+  description: Sets a comfortable temperature in the guest room when guest mode is active.
+  triggers: []
+  conditions:
+  - id: C_A67_GR_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A67_GUEST_MODE
+      role: CHECK
+  actions:
+  - id: A_A67_GR_2
+    type: capability_actuation
+    action: SET_TEMP_22
+    applies_to_device_id: D673
+    targets:
+    - kind: Capability
+      id: CAP_A67_GR_THERMOSTAT
+      role: ACTUATE

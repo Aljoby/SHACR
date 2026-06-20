@@ -1,0 +1,127 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A13
+      name: Apartment_13
+      category: Bachelor
+      rooms:
+      - id: R131
+        name: Entrance
+        devices:
+        - id: D131
+          name: EntranceMotionSensor_A13
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A13_ENT_MOTION
+            name: MOTION_DETECTED
+        - id: D132
+          name: EntranceDoorLock_A13
+          type: smart_lock
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A13_ENT_LOCK
+            name: LOCK
+          states:
+          - id: ST_A13_ENT_LOCK_STATE
+            name: LOCK_STATE
+        - id: D133
+          name: EntrancePresenceVirtual_A13
+          type: virtual_presence
+          platform: HomeAssistant
+          states:
+          - id: ST_A13_ENT_PRESENCE
+            name: PRESENCE_DETECTED
+semantics:
+  affects:
+  - from_capability_id: CAP_A13_ENT_LOCK
+    to_state_id: ST_A13_ENT_LOCK_STATE
+    note: Lock actuation changes entrance door lock state.
+evars: []
+contexts:
+- id: CTX_A13_AWAY
+  name: Away
+  scope: apartment
+  scope_id: A13
+states: []
+rules:
+- id: R_A13_ENT_1
+  name: Entrance Presence Mirror
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A13
+  description: Marks presence as detected when entrance motion is observed.
+  triggers:
+  - id: T_A13_ENT_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A13_ENT_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A13_ENT_1
+    type: state_update
+    action: SET_TRUE
+    applies_to_device_id: D133
+    targets:
+    - kind: State
+      id: ST_A13_ENT_PRESENCE
+      role: ACTUATE
+- id: R_A13_ENT_2
+  name: Unlock On Presence
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A13
+  description: Unlocks the door when entrance presence is detected.
+  triggers:
+  - id: T_A13_ENT_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A13_ENT_PRESENCE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A13_ENT_2
+    type: capability_actuation
+    action: UNLOCK
+    applies_to_device_id: D132
+    targets:
+    - kind: Capability
+      id: CAP_A13_ENT_LOCK
+      role: ACTUATE
+- id: R_A13_ENT_3
+  name: Away Auto Lock
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A13
+  description: Keeps the entrance door locked whenever the apartment is in away mode.
+  triggers: []
+  conditions:
+  - id: C_A13_ENT_3
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A13_AWAY
+      role: CHECK
+  actions:
+  - id: A_A13_ENT_3
+    type: capability_actuation
+    action: LOCK
+    applies_to_device_id: D132
+    targets:
+    - kind: Capability
+      id: CAP_A13_ENT_LOCK
+      role: ACTUATE

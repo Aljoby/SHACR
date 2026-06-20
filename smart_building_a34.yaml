@@ -1,0 +1,140 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A34
+      name: Apartment_34
+      category: FamilyWithKids
+      rooms:
+      - id: R341
+        name: Balcony
+        devices:
+        - id: D3411
+          name: SoilMoistureSensor_A34
+          type: soil_moisture_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A34_BL_SOIL
+            name: SOIL_MOISTURE
+        - id: D3412
+          name: SmartIrrigation_A34
+          type: irrigation_valve
+          platform: openHAB
+          capabilities:
+          - id: CAP_A34_BL_WATER
+            name: WATER_FLOW
+          states:
+          - id: ST_A34_BL_WATER
+            name: WATER_FLOW_STATE
+        - id: D3413
+          name: BalconyLight_A34
+          type: smart_light
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A34_BL_LIGHT
+            name: POWER
+          states:
+          - id: ST_A34_BL_LIGHT
+            name: LIGHT_POWER
+        - id: D3414
+          name: RainSensor_A34
+          type: rain_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A34_BL_RAIN
+            name: RAIN_DETECTED
+semantics:
+  affects:
+  - from_capability_id: CAP_A34_BL_WATER
+    to_state_id: ST_A34_BL_WATER
+    note: Irrigation actuation changes water flow state.
+  - from_capability_id: CAP_A34_BL_LIGHT
+    to_state_id: ST_A34_BL_LIGHT
+    note: Light actuation changes light state.
+evars: []
+contexts:
+- id: CTX_A34_NIGHT
+  name: Night
+  scope: apartment
+  scope_id: A34
+states: []
+rules:
+- id: R_A34_BL_1
+  name: Dry Soil Irrigation
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A34
+  description: Starts irrigation when soil moisture drops below threshold.
+  triggers:
+  - id: T_A34_BL_1
+    type: state
+    operator: <
+    value: 30
+    targets:
+    - kind: State
+      id: ST_A34_BL_SOIL
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A34_BL_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3412
+    targets:
+    - kind: Capability
+      id: CAP_A34_BL_WATER
+      role: ACTUATE
+- id: R_A34_BL_2
+  name: Rain Detection Stop Watering
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A34
+  description: Stops irrigation when rain is detected to save water.
+  triggers:
+  - id: T_A34_BL_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A34_BL_RAIN
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A34_BL_2
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D3412
+    targets:
+    - kind: Capability
+      id: CAP_A34_BL_WATER
+      role: ACTUATE
+- id: R_A34_BL_3
+  name: Night Balcony Light Off
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A34
+  description: Turns off balcony lights at late night to save energy.
+  triggers: []
+  conditions:
+  - id: C_A34_BL_3
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A34_NIGHT
+      role: CHECK
+  actions:
+  - id: A_A34_BL_3
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D3413
+    targets:
+    - kind: Capability
+      id: CAP_A34_BL_LIGHT
+      role: ACTUATE

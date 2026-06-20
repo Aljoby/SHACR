@@ -1,0 +1,107 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A36
+      name: Apartment_36
+      category: YoungProfessional
+      rooms:
+      - id: R361
+        name: LivingRoom
+        devices:
+        - id: D3611
+          name: PowerMonitor_A36
+          type: energy_monitor
+          platform: HomeAssistant
+          states:
+          - id: ST_A36_LR_POWER
+            name: POWER_USAGE
+        - id: D3612
+          name: SmartTV_A36
+          type: smart_tv
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A36_LR_TV
+            name: POWER
+          states:
+          - id: ST_A36_LR_TV
+            name: TV_POWER
+        - id: D3613
+          name: SmartPlug_A36
+          type: smart_plug
+          platform: openHAB
+          capabilities:
+          - id: CAP_A36_LR_PLUG
+            name: POWER
+          states:
+          - id: ST_A36_LR_PLUG
+            name: PLUG_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A36_LR_TV
+    to_state_id: ST_A36_LR_TV
+    note: TV actuation changes TV state.
+  - from_capability_id: CAP_A36_LR_PLUG
+    to_state_id: ST_A36_LR_PLUG
+    note: Plug actuation changes plug state.
+evars: []
+contexts:
+- id: CTX_A36_AWAY
+  name: Away
+  scope: apartment
+  scope_id: A36
+states: []
+rules:
+- id: R_A36_LR_1
+  name: Away Mode TV Off
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A36
+  description: Turns off TV when nobody is home to save energy.
+  triggers: []
+  conditions:
+  - id: C_A36_LR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A36_AWAY
+      role: CHECK
+  actions:
+  - id: A_A36_LR_1
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D3612
+    targets:
+    - kind: Capability
+      id: CAP_A36_LR_TV
+      role: ACTUATE
+- id: R_A36_LR_2
+  name: High Power Usage Plug Off
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A36
+  description: Turns off non-essential smart plug when power usage is high.
+  triggers:
+  - id: T_A36_LR_2
+    type: state
+    operator: '>'
+    value: 5000
+    targets:
+    - kind: State
+      id: ST_A36_LR_POWER
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A36_LR_2
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D3613
+    targets:
+    - kind: Capability
+      id: CAP_A36_LR_PLUG
+      role: ACTUATE

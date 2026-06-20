@@ -1,0 +1,153 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A37
+      name: Apartment_37
+      category: FamilyWithKids
+      rooms:
+      - id: R371
+        name: Hallway
+        devices:
+        - id: D3711
+          name: HallwayMotion_A37
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A37_HW_MOTION
+            name: MOTION_DETECTED
+        - id: D3712
+          name: HallwayLight_A37
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A37_HW_LIGHT
+            name: POWER
+          states:
+          - id: ST_A37_HW_LIGHT
+            name: LIGHT_POWER
+      - id: R372
+        name: ChildRoom
+        devices:
+        - id: D3713
+          name: ChildRoomLight_A37
+          type: smart_light
+          platform: openHAB
+          capabilities:
+          - id: CAP_A37_CR_LIGHT
+            name: POWER
+          states:
+          - id: ST_A37_CR_LIGHT
+            name: LIGHT_POWER
+        - id: D3714
+          name: ChildRoomNightlight_A37
+          type: smart_light
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A37_CR_NIGHTLIGHT
+            name: POWER
+          states:
+          - id: ST_A37_CR_NIGHTLIGHT
+            name: NIGHTLIGHT_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A37_HW_LIGHT
+    to_state_id: ST_A37_HW_LIGHT
+    note: Light actuation changes hallway light state.
+  - from_capability_id: CAP_A37_CR_LIGHT
+    to_state_id: ST_A37_CR_LIGHT
+    note: Light actuation changes child room light state.
+  - from_capability_id: CAP_A37_CR_NIGHTLIGHT
+    to_state_id: ST_A37_CR_NIGHTLIGHT
+    note: Light actuation changes nightlight state.
+evars: []
+contexts:
+- id: CTX_A37_NIGHT
+  name: Night
+  scope: apartment
+  scope_id: A37
+- id: CTX_A37_BEDTIME
+  name: Bedtime
+  scope: apartment
+  scope_id: A37
+states: []
+rules:
+- id: R_A37_HW_1
+  name: Hallway Motion Light
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A37
+  description: Turns on hallway light when motion is detected.
+  triggers:
+  - id: T_A37_HW_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A37_HW_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A37_HW_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3712
+    targets:
+    - kind: Capability
+      id: CAP_A37_HW_LIGHT
+      role: ACTUATE
+- id: R_A37_CR_1
+  name: Bedtime Lights Off
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A37
+  description: Turns off child room main light at bedtime.
+  triggers: []
+  conditions:
+  - id: C_A37_CR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A37_BEDTIME
+      role: CHECK
+  actions:
+  - id: A_A37_CR_1
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D3713
+    targets:
+    - kind: Capability
+      id: CAP_A37_CR_LIGHT
+      role: ACTUATE
+- id: R_A37_CR_2
+  name: Bedtime Nightlight On
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A37
+  description: Turns on nightlight at bedtime so child can sleep comfortably.
+  triggers: []
+  conditions:
+  - id: C_A37_CR_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A37_BEDTIME
+      role: CHECK
+  actions:
+  - id: A_A37_CR_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3714
+    targets:
+    - kind: Capability
+      id: CAP_A37_CR_NIGHTLIGHT
+      role: ACTUATE

@@ -1,0 +1,146 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A46
+      name: Apartment_46
+      category: ElderlyCouple
+      rooms:
+      - id: R461
+        name: LivingRoom
+        devices:
+        - id: D4611
+          name: LivingRoomWindow_A46
+          type: smart_window
+          platform: openHAB
+          capabilities:
+          - id: CAP_A46_LR_WINDOW
+            name: WINDOW_CONTROL
+          states:
+          - id: ST_A46_LR_WINDOW
+            name: WINDOW_STATE
+        - id: D4612
+          name: LivingRoomAC_A46
+          type: air_conditioner
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A46_LR_AC
+            name: POWER
+          states:
+          - id: ST_A46_LR_AC
+            name: AC_POWER
+        - id: D4613
+          name: PollenSensor_A46
+          type: air_quality_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A46_LR_POLLEN
+            name: POLLEN_LEVEL
+        - id: D4614
+          name: TempSensor_A46
+          type: temperature_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A46_LR_TEMP
+            name: TEMP_READING
+semantics:
+  affects:
+  - from_capability_id: CAP_A46_LR_WINDOW
+    to_state_id: ST_A46_LR_WINDOW
+    note: Window actuation changes window state.
+  - from_capability_id: CAP_A46_LR_AC
+    to_state_id: ST_A46_LR_AC
+    note: AC actuation changes AC state.
+  - from_capability_id: CAP_A46_LR_AC
+    to_evar_id: EV_A46_LR_TEMP
+    note: AC operation changes ambient temperature.
+  - from_capability_id: CAP_A46_LR_WINDOW
+    to_evar_id: EV_A46_LR_TEMP
+    note: Open window changes ambient temperature.
+evars:
+- id: EV_A46_LR_TEMP
+  name: LivingRoomTemperature
+  scope: room
+  scope_id: R461
+contexts: []
+states: []
+rules:
+- id: R_A46_LR_1
+  name: Hot Open Window Cooling
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A46
+  description: Opens window when temperature is high to cool naturally.
+  triggers:
+  - id: T_A46_LR_1
+    type: state
+    operator: '>'
+    value: 27
+    targets:
+    - kind: State
+      id: ST_A46_LR_TEMP
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A46_LR_1
+    type: capability_actuation
+    action: OPEN
+    applies_to_device_id: D4611
+    targets:
+    - kind: Capability
+      id: CAP_A46_LR_WINDOW
+      role: ACTUATE
+- id: R_A46_LR_2
+  name: High Pollen Close Window
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A46
+  description: Closes window when pollen level is high to protect allergic occupants - logical conflict with cooling rule.
+  triggers:
+  - id: T_A46_LR_2
+    type: state
+    operator: '>'
+    value: 80
+    targets:
+    - kind: State
+      id: ST_A46_LR_POLLEN
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A46_LR_2
+    type: capability_actuation
+    action: CLOSE
+    applies_to_device_id: D4611
+    targets:
+    - kind: Capability
+      id: CAP_A46_LR_WINDOW
+      role: ACTUATE
+- id: R_A46_LR_3
+  name: Hot Temperature AC On
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A46
+  description: Turns on AC when temperature is high - physical conflict with open window cooling rule.
+  triggers:
+  - id: T_A46_LR_3
+    type: state
+    operator: '>'
+    value: 27
+    targets:
+    - kind: State
+      id: ST_A46_LR_TEMP
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A46_LR_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4612
+    targets:
+    - kind: Capability
+      id: CAP_A46_LR_AC
+      role: ACTUATE

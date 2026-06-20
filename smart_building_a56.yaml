@@ -1,0 +1,103 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A56
+      name: Apartment_56
+      category: YoungProfessional
+      rooms:
+      - id: R561
+        name: Bedroom
+        devices:
+        - id: D5611
+          name: BedSensor_A56
+          type: bed_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A56_BR_BED
+            name: BED_OCCUPIED
+        - id: D5612
+          name: BedroomLight_A56
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A56_BR_LIGHT
+            name: POWER
+          states:
+          - id: ST_A56_BR_LIGHT
+            name: LIGHT_POWER
+        - id: D5613
+          name: BedroomDoor_A56
+          type: smart_lock
+          platform: openHAB
+          capabilities:
+          - id: CAP_A56_BR_DOOR
+            name: LOCK_CONTROL
+          states:
+          - id: ST_A56_BR_DOOR
+            name: DOOR_LOCK
+semantics:
+  affects:
+  - from_capability_id: CAP_A56_BR_LIGHT
+    to_state_id: ST_A56_BR_LIGHT
+    note: Light actuation changes light state.
+  - from_capability_id: CAP_A56_BR_DOOR
+    to_state_id: ST_A56_BR_DOOR
+    note: Door actuation changes lock state.
+evars: []
+contexts: []
+states: []
+rules:
+- id: R_A56_BR_1
+  name: Bed Occupied Lights Off
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A56
+  description: Turns off bedroom light when person gets in bed.
+  triggers:
+  - id: T_A56_BR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A56_BR_BED
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A56_BR_1
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D5612
+    targets:
+    - kind: Capability
+      id: CAP_A56_BR_LIGHT
+      role: ACTUATE
+- id: R_A56_BR_2
+  name: Bed Occupied Door Lock
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A56
+  description: Locks bedroom door when person is in bed.
+  triggers:
+  - id: T_A56_BR_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A56_BR_BED
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A56_BR_2
+    type: capability_actuation
+    action: LOCK
+    applies_to_device_id: D5613
+    targets:
+    - kind: Capability
+      id: CAP_A56_BR_DOOR
+      role: ACTUATE

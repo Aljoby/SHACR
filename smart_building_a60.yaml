@@ -1,0 +1,103 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A60
+      name: Apartment_60
+      category: YoungProfessional
+      rooms:
+      - id: R601
+        name: Entrance
+        devices:
+        - id: D6011
+          name: SmartDoorbell_A60
+          type: doorbell
+          platform: HomeAssistant
+          states:
+          - id: ST_A60_EN_DOORBELL
+            name: DOORBELL_PRESSED
+        - id: D6012
+          name: EntranceLight_A60
+          type: smart_light
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A60_EN_LIGHT
+            name: POWER
+          states:
+          - id: ST_A60_EN_LIGHT
+            name: LIGHT_POWER
+        - id: D6013
+          name: EntranceCamera_A60
+          type: camera
+          platform: openHAB
+          capabilities:
+          - id: CAP_A60_EN_CAM
+            name: RECORD
+          states:
+          - id: ST_A60_EN_CAM
+            name: CAM_RECORDING
+semantics:
+  affects:
+  - from_capability_id: CAP_A60_EN_LIGHT
+    to_state_id: ST_A60_EN_LIGHT
+    note: Light actuation changes light state.
+  - from_capability_id: CAP_A60_EN_CAM
+    to_state_id: ST_A60_EN_CAM
+    note: Camera actuation changes recording state.
+evars: []
+contexts: []
+states: []
+rules:
+- id: R_A60_EN_1
+  name: Doorbell Light On
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A60
+  description: Turns on entrance light when doorbell is pressed.
+  triggers:
+  - id: T_A60_EN_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A60_EN_DOORBELL
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A60_EN_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D6012
+    targets:
+    - kind: Capability
+      id: CAP_A60_EN_LIGHT
+      role: ACTUATE
+- id: R_A60_EN_2
+  name: Doorbell Camera Record
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A60
+  description: Starts recording when doorbell is pressed.
+  triggers:
+  - id: T_A60_EN_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A60_EN_DOORBELL
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A60_EN_2
+    type: capability_actuation
+    action: START
+    applies_to_device_id: D6013
+    targets:
+    - kind: Capability
+      id: CAP_A60_EN_CAM
+      role: ACTUATE

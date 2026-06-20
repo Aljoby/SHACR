@@ -1,0 +1,133 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A53
+      name: Apartment_53
+      category: YoungProfessional
+      rooms:
+      - id: R531
+        name: HomeOffice
+        devices:
+        - id: D5311
+          name: OfficeSpeaker_A53
+          type: smart_speaker
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A53_OF_SPEAKER
+            name: VOLUME
+          states:
+          - id: ST_A53_OF_SPEAKER
+            name: VOLUME_LEVEL
+        - id: D5312
+          name: OfficeNotificationHub_A53
+          type: notification_hub
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A53_OF_NOTIF
+            name: ALERT
+          states:
+          - id: ST_A53_OF_NOTIF
+            name: NOTIF_STATE
+        - id: D5313
+          name: DoorbellSensor_A53
+          type: doorbell
+          platform: openHAB
+          states:
+          - id: ST_A53_OF_DOORBELL
+            name: DOORBELL_PRESSED
+semantics:
+  affects:
+  - from_capability_id: CAP_A53_OF_SPEAKER
+    to_state_id: ST_A53_OF_SPEAKER
+    note: Speaker actuation changes volume state.
+  - from_capability_id: CAP_A53_OF_NOTIF
+    to_state_id: ST_A53_OF_NOTIF
+    note: Notification actuation changes notification state.
+evars: []
+contexts:
+- id: CTX_A53_MEETING
+  name: InMeeting
+  scope: apartment
+  scope_id: A53
+states: []
+rules:
+- id: R_A53_OF_1
+  name: Meeting Mute Speaker
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A53
+  description: Mutes speaker during meetings to avoid interruption.
+  triggers: []
+  conditions:
+  - id: C_A53_OF_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A53_MEETING
+      role: CHECK
+  actions:
+  - id: A_A53_OF_1
+    type: capability_actuation
+    action: MUTE
+    applies_to_device_id: D5311
+    targets:
+    - kind: Capability
+      id: CAP_A53_OF_SPEAKER
+      role: ACTUATE
+- id: R_A53_OF_2
+  name: Doorbell Loud Alert
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A53
+  description: Plays loud alert via speaker when doorbell rings - logical conflict with mute during meeting.
+  triggers:
+  - id: T_A53_OF_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A53_OF_DOORBELL
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A53_OF_2
+    type: capability_actuation
+    action: SET_LOUD
+    applies_to_device_id: D5311
+    targets:
+    - kind: Capability
+      id: CAP_A53_OF_SPEAKER
+      role: ACTUATE
+- id: R_A53_OF_3
+  name: Doorbell Notification
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A53
+  description: Sends notification when doorbell rings.
+  triggers:
+  - id: T_A53_OF_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A53_OF_DOORBELL
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A53_OF_3
+    type: capability_actuation
+    action: SEND_ALERT
+    applies_to_device_id: D5312
+    targets:
+    - kind: Capability
+      id: CAP_A53_OF_NOTIF
+      role: ACTUATE

@@ -1,0 +1,163 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A17
+      name: Apartment_17
+      category: Bachelor
+      rooms:
+      - id: R171
+        name: LivingRoom
+        devices:
+        - id: D171
+          name: LivingRoomMotionSensor_A17
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A17_LR_MOTION
+            name: MOTION_DETECTED
+        - id: D172
+          name: LivingRoomLight_A17
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A17_LR_LIGHT_POWER
+            name: POWER
+          states:
+          - id: ST_A17_LR_LIGHT_POWER
+            name: LIGHT_POWER
+        - id: D173
+          name: LivingRoomSecurityCamera_A17
+          type: camera
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A17_LR_CAM_POWER
+            name: POWER
+          states:
+          - id: ST_A17_LR_CAM_POWER
+            name: CAMERA_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A17_LR_LIGHT_POWER
+    to_state_id: ST_A17_LR_LIGHT_POWER
+    note: Light power actuation changes light power state.
+  - from_capability_id: CAP_A17_LR_CAM_POWER
+    to_state_id: ST_A17_LR_CAM_POWER
+    note: Camera power actuation changes camera power state.
+evars: []
+contexts:
+- id: CTX_A17_PRIVACY
+  name: PrivacyMode
+  scope: apartment
+  scope_id: A17
+- id: CTX_A17_AWAY
+  name: Away
+  scope: apartment
+  scope_id: A17
+states: []
+rules:
+- id: R_A17_LR_1
+  name: Motion Light Assist
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A17
+  description: Turns on the living room light when motion is detected.
+  triggers:
+  - id: T_A17_LR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A17_LR_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A17_LR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D172
+    targets:
+    - kind: Capability
+      id: CAP_A17_LR_LIGHT_POWER
+      role: ACTUATE
+- id: R_A17_LR_2
+  name: Camera Anti-Glare Off
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A17
+  description: Turns off the camera when the living room light is on to avoid glare.
+  triggers:
+  - id: T_A17_LR_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A17_LR_LIGHT_POWER
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A17_LR_2
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D173
+    targets:
+    - kind: Capability
+      id: CAP_A17_LR_CAM_POWER
+      role: ACTUATE
+- id: R_A17_LR_3
+  name: Away Surveillance
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A17
+  description: Turns on the camera while the apartment is away.
+  triggers: []
+  conditions:
+  - id: C_A17_LR_3
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A17_AWAY
+      role: CHECK
+  actions:
+  - id: A_A17_LR_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D173
+    targets:
+    - kind: Capability
+      id: CAP_A17_LR_CAM_POWER
+      role: ACTUATE
+- id: R_A17_LR_4
+  name: Privacy Camera Off
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A17
+  description: Turns off the camera when privacy mode is active.
+  triggers: []
+  conditions:
+  - id: C_A17_LR_4
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A17_PRIVACY
+      role: CHECK
+  actions:
+  - id: A_A17_LR_4
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D173
+    targets:
+    - kind: Capability
+      id: CAP_A17_LR_CAM_POWER
+      role: ACTUATE

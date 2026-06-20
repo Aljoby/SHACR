@@ -1,0 +1,123 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A15
+      name: Apartment_15
+      category: Bachelor
+      rooms:
+      - id: R151
+        name: Bedroom
+        devices:
+        - id: D151
+          name: BedroomHeater_A15
+          type: heater
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A15_BR_HEAT_POWER
+            name: POWER
+          states:
+          - id: ST_A15_BR_HEATER_POWER
+            name: HEATER_POWER
+        - id: D152
+          name: BedroomTempSafetySensor_A15
+          type: temperature_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A15_BR_OVERHEAT
+            name: OVERHEAT_DETECTED
+        - id: D153
+          name: BedroomScheduleClock_A15
+          type: virtual_clock
+          platform: HomeAssistant
+          states:
+          - id: ST_A15_BR_WARMUP_TIME
+            name: WARMUP_TIME
+semantics:
+  affects:
+  - from_capability_id: CAP_A15_BR_HEAT_POWER
+    to_state_id: ST_A15_BR_HEATER_POWER
+    note: Heater power actuation changes heater power state.
+evars: []
+contexts: []
+states: []
+rules:
+- id: R_A15_BR_1
+  name: Scheduled Warm-Up
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A15
+  description: Turns on the bedroom heater during morning warm-up time.
+  triggers:
+  - id: T_A15_BR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A15_BR_WARMUP_TIME
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A15_BR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D151
+    targets:
+    - kind: Capability
+      id: CAP_A15_BR_HEAT_POWER
+      role: ACTUATE
+- id: R_A15_BR_2
+  name: Overheat Safety Shutoff
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A15
+  description: Turns off the heater when overheating is detected.
+  triggers:
+  - id: T_A15_BR_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A15_BR_OVERHEAT
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A15_BR_2
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D151
+    targets:
+    - kind: Capability
+      id: CAP_A15_BR_HEAT_POWER
+      role: ACTUATE
+- id: R_A15_BR_3
+  name: Auto-Recover Heat Hold
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A15
+  description: Turns the heater back on after an off event to maintain comfort.
+  triggers:
+  - id: T_A15_BR_3
+    type: state
+    operator: ==
+    value: false
+    targets:
+    - kind: State
+      id: ST_A15_BR_HEATER_POWER
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A15_BR_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D151
+    targets:
+    - kind: Capability
+      id: CAP_A15_BR_HEAT_POWER
+      role: ACTUATE

@@ -1,0 +1,263 @@
+topology:
+  building:
+    id: "B1"
+    name: "SmartBuilding_1"
+    apartments:
+      - id: "A6"
+        name: "Apartment_6"
+        rooms:
+          - id: "R61"
+            name: "Kitchen"
+            devices:
+              - id: "D61"
+                name: "KitchenScheduleController"
+                type: "schedule_controller"
+                platform: "HomeAssistant"
+                states:
+                  - id: "ST_A6_KIT_HIGH_LOAD_TIME"
+                    name: "HIGH_LOAD_TIME"
+
+              - id: "D62"
+                name: "KitchenTemperatureSensor"
+                type: "temperature_sensor"
+                platform: "SmartThings"
+                states:
+                  - id: "ST_A6_KIT_TEMP"
+                    name: "TEMPERATURE"
+
+              - id: "D63"
+                name: "SmartOven_Kitchen"
+                type: "smart_oven"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_A6_KIT_OVEN_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_A6_KIT_OVEN_POWER"
+                    name: "OVEN_POWER"
+
+              - id: "D64"
+                name: "Dishwasher_Kitchen"
+                type: "dishwasher"
+                platform: "SmartThings"
+                capabilities:
+                  - id: "CAP_A6_KIT_DISHWASHER_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_A6_KIT_DISHWASHER_POWER"
+                    name: "DISHWASHER_POWER"
+
+              - id: "D65"
+                name: "KettlePlug_Kitchen"
+                type: "smart_plug"
+                platform: "openHAB"
+                capabilities:
+                  - id: "CAP_A6_KIT_KETTLE_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_A6_KIT_KETTLE_POWER"
+                    name: "KETTLE_POWER"
+
+          - id: "R62"
+            name: "LivingRoom"
+            devices:
+              - id: "D66"
+                name: "LivingRoomMotionSensor_A6"
+                type: "motion_sensor"
+                platform: "SmartThings"
+                states:
+                  - id: "ST_A6_LR_MOTION"
+                    name: "MOTION_DETECTED"
+
+              - id: "D67"
+                name: "LivingRoomLamp_A6"
+                type: "smart_light"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_A6_LR_LIGHT_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_A6_LR_LIGHT_POWER"
+                    name: "LIGHT_POWER"
+
+semantics:
+  affects:
+    - from_capability_id: "CAP_A6_KIT_OVEN_POWER"
+      to_state_id: "ST_A6_KIT_OVEN_POWER"
+      note: "Oven power actuation changes oven power state."
+
+    - from_capability_id: "CAP_A6_KIT_DISHWASHER_POWER"
+      to_state_id: "ST_A6_KIT_DISHWASHER_POWER"
+      note: "Dishwasher power actuation changes dishwasher power state."
+
+    - from_capability_id: "CAP_A6_KIT_KETTLE_POWER"
+      to_state_id: "ST_A6_KIT_KETTLE_POWER"
+      note: "Smart plug actuation changes kettle power state."
+
+    - from_capability_id: "CAP_A6_LR_LIGHT_POWER"
+      to_state_id: "ST_A6_LR_LIGHT_POWER"
+      note: "Living room light power actuation changes living room light state."
+
+    - from_capability_id: "CAP_A6_KIT_OVEN_POWER"
+      to_evar_id: "EV_A6_KIT_TEMP"
+      note: "Oven operation contributes to increased kitchen temperature."
+
+    - from_capability_id: "CAP_A6_KIT_DISHWASHER_POWER"
+      to_evar_id: "EV_A6_KIT_TEMP"
+      note: "Dishwasher operation contributes to increased kitchen temperature."
+
+    - from_capability_id: "CAP_A6_KIT_KETTLE_POWER"
+      to_evar_id: "EV_A6_KIT_TEMP"
+      note: "Kettle power draw contributes to increased kitchen temperature."
+
+evars:
+  - id: "EV_A6_KIT_TEMP"
+    name: "KitchenAmbientTemperature"
+    scope: "room"
+    scope_id: "R61"
+
+contexts:
+  - id: "CTX_A6_EVENING"
+    name: "Evening"
+    scope: "apartment"
+    scope_id: "A6"
+
+  - id: "CTX_A6_OCCUPIED"
+    name: "Occupied"
+    scope: "apartment"
+    scope_id: "A6"
+
+states: []
+
+rules:
+  - id: "R_A6_LR_1"
+    name: "Living Room Motion Light"
+    platform: "SmartThings"
+    applies_in:
+      kind: "Apartment"
+      id: "A6"
+    description: "Turns on the living room lamp when motion is detected in the evening."
+    triggers:
+      - id: "T_A6_LR_1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A6_LR_MOTION"
+            role: "OBSERVE"
+    conditions:
+      - id: "C_A6_LR_1"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_A6_EVENING"
+            role: "CHECK"
+    actions:
+      - id: "A_A6_LR_1"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D67"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A6_LR_LIGHT_POWER"
+            role: "ACTUATE"
+
+  - id: "R_A6_KIT_1"
+    name: "Kitchen Kettle Off When Unoccupied"
+    platform: "openHAB"
+    applies_in:
+      kind: "Apartment"
+      id: "A6"
+    description: "Turns off the kettle smart plug when the apartment is not occupied."
+    triggers: []
+    conditions:
+      - id: "C_A6_KIT_1"
+        type: "context"
+        operator: "=="
+        value: false
+        targets:
+          - kind: "Context"
+            id: "CTX_A6_OCCUPIED"
+            role: "CHECK"
+    actions:
+      - id: "A_A6_KIT_1"
+        type: "capability_actuation"
+        action: "OFF"
+        applies_to_device_id: "D65"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A6_KIT_KETTLE_POWER"
+            role: "ACTUATE"
+
+  - id: "R_A6_KIT_2"
+    name: "Scheduled High Load Cooking"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A6"
+    description: "At scheduled high-load time, turns on multiple kitchen appliances."
+    triggers:
+      - id: "T_A6_KIT_2"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A6_KIT_HIGH_LOAD_TIME"
+            role: "OBSERVE"
+    conditions: []
+    actions:
+      - id: "A_A6_KIT_2_1"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D63"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A6_KIT_OVEN_POWER"
+            role: "ACTUATE"
+      - id: "A_A6_KIT_2_2"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D64"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A6_KIT_DISHWASHER_POWER"
+            role: "ACTUATE"
+      - id: "A_A6_KIT_2_3"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D65"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A6_KIT_KETTLE_POWER"
+            role: "ACTUATE"
+
+  - id: "R_A6_KIT_3"
+    name: "Kitchen Oven Thermal Safety"
+    platform: "SmartThings"
+    applies_in:
+      kind: "Apartment"
+      id: "A6"
+    description: "Turns off the oven when kitchen temperature exceeds the safety threshold."
+    triggers:
+      - id: "T_A6_KIT_3"
+        type: "evar"
+        operator: ">"
+        value: 35
+        targets:
+          - kind: "EVar"
+            id: "EV_A6_KIT_TEMP"
+            role: "OBSERVE"
+    conditions: []
+    actions:
+      - id: "A_A6_KIT_3_1"
+        type: "capability_actuation"
+        action: "OFF"
+        applies_to_device_id: "D63"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A6_KIT_OVEN_POWER"
+            role: "ACTUATE"

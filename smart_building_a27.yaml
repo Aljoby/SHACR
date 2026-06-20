@@ -1,0 +1,142 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A27
+      name: Apartment_27
+      category: FamilyWithKids
+      rooms:
+      - id: R271
+        name: LivingRoom
+        devices:
+        - id: D271
+          name: LivingRoomMotionSensor_A27
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A27_LR_MOTION
+            name: MOTION_DETECTED
+        - id: D272
+          name: LivingRoomLight_A27
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A27_LR_LIGHT_POWER
+            name: POWER
+          states:
+          - id: ST_A27_LR_LIGHT_POWER
+            name: LIGHT_POWER
+      - id: R272
+        name: Entrance
+        devices:
+        - id: D273
+          name: EntranceDoorContact_A27
+          type: door_contact_sensor
+          platform: openHAB
+          states:
+          - id: ST_A27_ENT_DOOR_CLOSED
+            name: DOOR_CLOSED
+        - id: D274
+          name: EntranceDoorLock_A27
+          type: smart_lock
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A27_ENT_LOCK
+            name: LOCK
+          states:
+          - id: ST_A27_ENT_LOCK_STATE
+            name: LOCK_STATE
+semantics:
+  affects:
+  - from_capability_id: CAP_A27_LR_LIGHT_POWER
+    to_state_id: ST_A27_LR_LIGHT_POWER
+    note: Light actuation changes living room light state.
+  - from_capability_id: CAP_A27_ENT_LOCK
+    to_state_id: ST_A27_ENT_LOCK_STATE
+    note: Lock actuation changes entrance lock state.
+evars: []
+contexts:
+- id: CTX_A27_EVENING
+  name: Evening
+  scope: apartment
+  scope_id: A27
+- id: CTX_A27_AWAY
+  name: Away
+  scope: apartment
+  scope_id: A27
+states:
+- id: ST_A27_OCCUPIED
+  name: Occupied
+  scope: apartment
+  scope_id: A27
+rules:
+- id: R_A27_LR_1
+  name: Evening Living Room Light
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A27
+  description: Turns on the living room light when motion is detected in the evening.
+  triggers:
+  - id: T_A27_LR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A27_LR_MOTION
+      role: OBSERVE
+  conditions:
+  - id: C_A27_LR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A27_EVENING
+      role: CHECK
+  actions:
+  - id: A_A27_LR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D272
+    targets:
+    - kind: Capability
+      id: CAP_A27_LR_LIGHT_POWER
+      role: ACTUATE
+- id: R_A27_ENT_1
+  name: Entrance Auto Lock When Away
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A27
+  description: Locks the entrance door when the door is closed and the apartment is
+    away.
+  triggers:
+  - id: T_A27_ENT_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A27_ENT_DOOR_CLOSED
+      role: OBSERVE
+  conditions:
+  - id: C_A27_ENT_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A27_AWAY
+      role: CHECK
+  actions:
+  - id: A_A27_ENT_1
+    type: capability_actuation
+    action: LOCK
+    applies_to_device_id: D274
+    targets:
+    - kind: Capability
+      id: CAP_A27_ENT_LOCK
+      role: ACTUATE

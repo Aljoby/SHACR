@@ -1,0 +1,133 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A65
+      name: Apartment_65
+      category: YoungProfessional
+      rooms:
+      - id: R651
+        name: DiningRoom
+        devices:
+        - id: D651
+          name: DiningRoomLight_A65
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A65_DR_LIGHT_DIM
+            name: DIMMER
+          states:
+          - id: ST_A65_DR_LIGHT_LEVEL
+            name: LIGHT_DIM_LEVEL
+        - id: D652
+          name: DiningRoomSpeaker_A65
+          type: smart_speaker
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A65_DR_SPEAKER
+            name: VOLUME
+          states:
+          - id: ST_A65_DR_SPEAKER_LEVEL
+            name: SPEAKER_VOLUME
+        - id: D653
+          name: DiningRoomMotionSensor_A65
+          type: motion_sensor
+          platform: openHAB
+          states:
+          - id: ST_A65_DR_MOTION
+            name: MOTION_DETECTED
+semantics:
+  affects:
+  - from_capability_id: CAP_A65_DR_LIGHT_DIM
+    to_state_id: ST_A65_DR_LIGHT_LEVEL
+    note: Dimmer actuation changes light dim level.
+  - from_capability_id: CAP_A65_DR_SPEAKER
+    to_state_id: ST_A65_DR_SPEAKER_LEVEL
+    note: Speaker volume actuation changes speaker volume state.
+contexts:
+- id: CTX_A65_DINNER
+  name: DinnerTime
+  scope: apartment
+  scope_id: A65
+evars: []
+states: []
+rules:
+- id: R_A65_DR_1
+  name: Dinner Ambience Light
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A65
+  description: Sets dining room light to warm dim level when dinner time begins.
+  triggers: []
+  conditions:
+  - id: C_A65_DR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A65_DINNER
+      role: CHECK
+  actions:
+  - id: A_A65_DR_1
+    type: capability_actuation
+    action: SET_LEVEL_40
+    applies_to_device_id: D651
+    targets:
+    - kind: Capability
+      id: CAP_A65_DR_LIGHT_DIM
+      role: ACTUATE
+- id: R_A65_DR_2
+  name: Dinner Music
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A65
+  description: Plays dinner background music at moderate volume.
+  triggers: []
+  conditions:
+  - id: C_A65_DR_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A65_DINNER
+      role: CHECK
+  actions:
+  - id: A_A65_DR_2
+    type: capability_actuation
+    action: SET_LEVEL_30
+    applies_to_device_id: D652
+    targets:
+    - kind: Capability
+      id: CAP_A65_DR_SPEAKER
+      role: ACTUATE
+- id: R_A65_DR_3
+  name: Dining Motion Greet
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A65
+  description: Brightens the dining room light to a welcoming level when motion is detected.
+  triggers:
+  - id: T_A65_DR_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A65_DR_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A65_DR_3
+    type: capability_actuation
+    action: SET_LEVEL_70
+    applies_to_device_id: D651
+    targets:
+    - kind: Capability
+      id: CAP_A65_DR_LIGHT_DIM
+      role: ACTUATE

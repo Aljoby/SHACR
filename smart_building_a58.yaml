@@ -1,0 +1,115 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A58
+      name: Apartment_58
+      category: YoungProfessional
+      rooms:
+      - id: R581
+        name: Bathroom
+        devices:
+        - id: D5811
+          name: SmartShower_A58
+          type: smart_shower
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A58_BA_SHOWER
+            name: WATER_FLOW
+          states:
+          - id: ST_A58_BA_SHOWER
+            name: SHOWER_STATE
+        - id: D5812
+          name: TowelWarmer_A58
+          type: towel_warmer
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A58_BA_WARMER
+            name: POWER
+          states:
+          - id: ST_A58_BA_WARMER
+            name: WARMER_POWER
+        - id: D5813
+          name: BathroomMotion_A58
+          type: motion_sensor
+          platform: openHAB
+          states:
+          - id: ST_A58_BA_MOTION
+            name: MOTION_DETECTED
+semantics:
+  affects:
+  - from_capability_id: CAP_A58_BA_SHOWER
+    to_state_id: ST_A58_BA_SHOWER
+    note: Shower actuation changes shower state.
+  - from_capability_id: CAP_A58_BA_WARMER
+    to_state_id: ST_A58_BA_WARMER
+    note: Warmer actuation changes warmer state.
+evars: []
+contexts:
+- id: CTX_A58_MORNING
+  name: Morning
+  scope: apartment
+  scope_id: A58
+states: []
+rules:
+- id: R_A58_BA_1
+  name: Morning Towel Warmer
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A58
+  description: Turns on towel warmer in the morning.
+  triggers: []
+  conditions:
+  - id: C_A58_BA_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A58_MORNING
+      role: CHECK
+  actions:
+  - id: A_A58_BA_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D5812
+    targets:
+    - kind: Capability
+      id: CAP_A58_BA_WARMER
+      role: ACTUATE
+- id: R_A58_BA_2
+  name: Motion Pre Heat Shower
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A58
+  description: Pre-heats shower water when motion detected in morning.
+  triggers:
+  - id: T_A58_BA_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A58_BA_MOTION
+      role: OBSERVE
+  conditions:
+  - id: C_A58_BA_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A58_MORNING
+      role: CHECK
+  actions:
+  - id: A_A58_BA_2
+    type: capability_actuation
+    action: PREHEAT
+    applies_to_device_id: D5811
+    targets:
+    - kind: Capability
+      id: CAP_A58_BA_SHOWER
+      role: ACTUATE

@@ -1,0 +1,220 @@
+topology:
+  building:
+    id: "B1"
+    name: "SmartBuilding_1"
+    apartments:
+      - id: "A8"
+        name: "Apartment_8"
+        rooms:
+          - id: "R81"
+            name: "Entrance"
+            devices:
+              - id: "D81"
+                name: "EntranceMotionSensor_A8"
+                type: "motion_sensor"
+                platform: "SmartThings"
+                states:
+                  - id: "ST_A8_ENT_MOTION"
+                    name: "MOTION_DETECTED"
+
+              - id: "D82"
+                name: "EntranceDoorLock_A8"
+                type: "smart_lock"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_A8_ENT_LOCK"
+                    name: "LOCK"
+                states:
+                  - id: "ST_A8_ENT_LOCK_STATE"
+                    name: "LOCK_STATE"
+
+              - id: "D83"
+                name: "EntrancePresenceVirtual_A8"
+                type: "virtual_presence"
+                platform: "HomeAssistant"
+                states:
+                  - id: "ST_A8_ENT_PRESENCE"
+                    name: "PRESENCE_DETECTED"
+
+          - id: "R82"
+            name: "LivingRoom"
+            devices:
+              - id: "D84"
+                name: "LivingRoomRobotVacuum_A8"
+                type: "robot_vacuum"
+                platform: "openHAB"
+                capabilities:
+                  - id: "CAP_A8_LR_VACUUM_RUN"
+                    name: "RUN"
+                states:
+                  - id: "ST_A8_LR_VACUUM_RUNNING"
+                    name: "VACUUM_RUNNING"
+
+              - id: "D85"
+                name: "LivingRoomThermostat_A8"
+                type: "thermostat"
+                platform: "SmartThings"
+                capabilities:
+                  - id: "CAP_A8_LR_HEAT_POWER"
+                    name: "HEAT_POWER"
+                states:
+                  - id: "ST_A8_LR_HEAT_STATE"
+                    name: "HEATING_STATE"
+
+              - id: "D86"
+                name: "LivingRoomTempSensor_A8"
+                type: "temperature_sensor"
+                platform: "HomeAssistant"
+                states:
+                  - id: "ST_A8_LR_TEMP_SENSOR"
+                    name: "TEMPERATURE_READING"
+
+semantics:
+  affects:
+    - from_capability_id: "CAP_A8_ENT_LOCK"
+      to_state_id: "ST_A8_ENT_LOCK_STATE"
+      note: "Lock actuation changes entrance door lock state."
+
+    - from_capability_id: "CAP_A8_LR_HEAT_POWER"
+      to_state_id: "ST_A8_LR_HEAT_STATE"
+      note: "Heating actuation changes the living room heating state."
+
+    - from_capability_id: "CAP_A8_LR_HEAT_POWER"
+      to_evar_id: "EV_A8_LR_TEMP"
+      note: "Heating increases the living room ambient temperature."
+
+    - from_capability_id: "CAP_A8_LR_VACUUM_RUN"
+      to_state_id: "ST_A8_LR_VACUUM_RUNNING"
+      note: "Vacuum actuation changes the robot vacuum running state."
+
+evars:
+  - id: "EV_A8_LR_TEMP"
+    name: "LivingRoomAmbientTemperature"
+    scope: "room"
+    scope_id: "R82"
+
+contexts:
+  - id: "CTX_A8_AWAY"
+    name: "Away"
+    scope: "apartment"
+    scope_id: "A8"
+
+  - id: "CTX_A8_COLD_WEATHER"
+    name: "ColdWeather"
+    scope: "apartment"
+    scope_id: "A8"
+
+states:
+  - id: "ST_A8_HOME_OCCUPIED"
+    name: "HomeOccupied"
+    scope: "apartment"
+    scope_id: "A8"
+
+rules:
+  - id: "R_A8_ENT_1"
+    name: "Entrance Presence Mirror"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A8"
+    description: "When entrance motion is detected, mark presence as detected."
+    triggers:
+      - id: "T_A8_ENT_1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A8_ENT_MOTION"
+            role: "OBSERVE"
+    conditions: []
+    actions:
+      - id: "A_A8_ENT_1"
+        type: "state_update"
+        action: "SET_TRUE"
+        applies_to_device_id: "D83"
+        targets:
+          - kind: "State"
+            id: "ST_A8_ENT_PRESENCE"
+            role: "ACTUATE"
+
+  - id: "R_A8_ENT_2"
+    name: "Entrance Unlock On Presence"
+    platform: "SmartThings"
+    applies_in:
+      kind: "Apartment"
+      id: "A8"
+    description: "Unlocks the entrance door when presence is detected."
+    triggers:
+      - id: "T_A8_ENT_2"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A8_ENT_PRESENCE"
+            role: "OBSERVE"
+    conditions: []
+    actions:
+      - id: "A_A8_ENT_2"
+        type: "capability_actuation"
+        action: "UNLOCK"
+        applies_to_device_id: "D82"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A8_ENT_LOCK"
+            role: "ACTUATE"
+
+  - id: "R_A8_LR_1"
+    name: "Robot Vacuum Daily Run"
+    platform: "openHAB"
+    applies_in:
+      kind: "Apartment"
+      id: "A8"
+    description: "Runs the robot vacuum for routine cleaning."
+    triggers: []
+    conditions: []
+    actions:
+      - id: "A_A8_LR_1"
+        type: "capability_actuation"
+        action: "START"
+        applies_to_device_id: "D84"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A8_LR_VACUUM_RUN"
+            role: "ACTUATE"
+
+  - id: "R_A8_LR_2"
+    name: "Comfort Heating On Presence"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A8"
+    description: "Turns on heating when presence is detected during cold weather."
+    triggers:
+      - id: "T_A8_LR_2"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A8_ENT_PRESENCE"
+            role: "OBSERVE"
+    conditions:
+      - id: "C_A8_LR_2"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_A8_COLD_WEATHER"
+            role: "CHECK"
+    actions:
+      - id: "A_A8_LR_2"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D85"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A8_LR_HEAT_POWER"
+            role: "ACTUATE"

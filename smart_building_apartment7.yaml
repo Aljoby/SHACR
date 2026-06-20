@@ -1,0 +1,251 @@
+topology:
+  building:
+    id: "B1"
+    name: "SmartBuilding_1"
+    apartments:
+      - id: "A7"
+        name: "Apartment_7"
+        rooms:
+          - id: "R71"
+            name: "LivingRoom"
+            devices:
+              - id: "D71"
+                name: "LivingRoomTemperatureSensor_A7"
+                type: "temperature_sensor"
+                platform: "HomeAssistant"
+                states:
+                  - id: "ST_A7_LR_TEMP_SENSOR"
+                    name: "TEMPERATURE_READING"
+
+              - id: "D72"
+                name: "LivingRoomSmartHeater_A7"
+                type: "heater"
+                platform: "SmartThings"
+                capabilities:
+                  - id: "CAP_A7_LR_HEATER_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_A7_LR_HEATER_POWER"
+                    name: "HEATER_POWER"
+
+              - id: "D73"
+                name: "LivingRoomWindowActuator_A7"
+                type: "smart_window"
+                platform: "openHAB"
+                capabilities:
+                  - id: "CAP_A7_LR_WINDOW_CONTROL"
+                    name: "WINDOW_CONTROL"
+                states:
+                  - id: "ST_A7_LR_WINDOW_STATE"
+                    name: "WINDOW_STATE"
+
+              - id: "D74"
+                name: "LivingRoomMotionSensor_A7"
+                type: "motion_sensor"
+                platform: "SmartThings"
+                states:
+                  - id: "ST_A7_LR_MOTION"
+                    name: "MOTION_DETECTED"
+
+              - id: "D75"
+                name: "LivingRoomLamp_A7"
+                type: "smart_light"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_A7_LR_LIGHT_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_A7_LR_LIGHT_POWER"
+                    name: "LIGHT_POWER"
+
+          - id: "R72"
+            name: "Bedroom"
+            devices:
+              - id: "D76"
+                name: "BedroomDoorContact_A7"
+                type: "door_contact_sensor"
+                platform: "openHAB"
+                states:
+                  - id: "ST_A7_BR_DOOR_OPEN"
+                    name: "DOOR_OPEN"
+
+              - id: "D77"
+                name: "BedroomLamp_A7"
+                type: "smart_light"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_A7_BR_LIGHT_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_A7_BR_LIGHT_POWER"
+                    name: "LIGHT_POWER"
+
+semantics:
+  affects:
+    - from_capability_id: "CAP_A7_LR_HEATER_POWER"
+      to_state_id: "ST_A7_LR_HEATER_POWER"
+      note: "Heater power actuation changes heater power state."
+
+    - from_capability_id: "CAP_A7_LR_WINDOW_CONTROL"
+      to_state_id: "ST_A7_LR_WINDOW_STATE"
+      note: "Window actuation changes living room window state."
+
+    - from_capability_id: "CAP_A7_LR_LIGHT_POWER"
+      to_state_id: "ST_A7_LR_LIGHT_POWER"
+      note: "Living room light power actuation changes light state."
+
+    - from_capability_id: "CAP_A7_BR_LIGHT_POWER"
+      to_state_id: "ST_A7_BR_LIGHT_POWER"
+      note: "Bedroom light power actuation changes bedroom light state."
+
+    - from_capability_id: "CAP_A7_LR_HEATER_POWER"
+      to_evar_id: "EV_A7_LR_TEMP"
+      note: "Heating increases the living room ambient temperature."
+
+    - from_capability_id: "CAP_A7_LR_WINDOW_CONTROL"
+      to_evar_id: "EV_A7_LR_TEMP"
+      note: "Opening the living room window decreases the living room ambient temperature."
+
+evars:
+  - id: "EV_A7_LR_TEMP"
+    name: "LivingRoomAmbientTemperature"
+    scope: "room"
+    scope_id: "R71"
+
+contexts:
+  - id: "CTX_A7_EVENING"
+    name: "Evening"
+    scope: "apartment"
+    scope_id: "A7"
+
+  - id: "CTX_A7_OCCUPIED"
+    name: "Occupied"
+    scope: "apartment"
+    scope_id: "A7"
+
+states: []
+
+rules:
+  - id: "R_A7_LR_1"
+    name: "Living Room Motion Light"
+    platform: "SmartThings"
+    applies_in:
+      kind: "Apartment"
+      id: "A7"
+    description: "Turns on the living room lamp when motion is detected in the evening."
+    triggers:
+      - id: "T_A7_LR_1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A7_LR_MOTION"
+            role: "OBSERVE"
+    conditions:
+      - id: "C_A7_LR_1"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_A7_EVENING"
+            role: "CHECK"
+    actions:
+      - id: "A_A7_LR_1"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D75"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A7_LR_LIGHT_POWER"
+            role: "ACTUATE"
+
+  - id: "R_A7_BR_1"
+    name: "Bedroom Door Welcome Light"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A7"
+    description: "Turns on the bedroom lamp when the bedroom door opens while the apartment is occupied."
+    triggers:
+      - id: "T_A7_BR_1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A7_BR_DOOR_OPEN"
+            role: "OBSERVE"
+    conditions:
+      - id: "C_A7_BR_1"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_A7_OCCUPIED"
+            role: "CHECK"
+    actions:
+      - id: "A_A7_BR_1"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D77"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A7_BR_LIGHT_POWER"
+            role: "ACTUATE"
+
+  - id: "R_A7_LR_2"
+    name: "Living Room Heating Comfort"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A7"
+    description: "Turns on the living room heater when ambient temperature falls below the comfort threshold."
+    triggers:
+      - id: "T_A7_LR_2"
+        type: "evar"
+        operator: "<"
+        value: 19
+        targets:
+          - kind: "EVar"
+            id: "EV_A7_LR_TEMP"
+            role: "OBSERVE"
+    conditions: []
+    actions:
+      - id: "A_A7_LR_2"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D72"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A7_LR_HEATER_POWER"
+            role: "ACTUATE"
+
+  - id: "R_A7_LR_3"
+    name: "Living Room Ventilation Control"
+    platform: "openHAB"
+    applies_in:
+      kind: "Apartment"
+      id: "A7"
+    description: "Opens the living room smart window when ambient temperature exceeds the ventilation threshold."
+    triggers:
+      - id: "T_A7_LR_3"
+        type: "evar"
+        operator: ">"
+        value: 24
+        targets:
+          - kind: "EVar"
+            id: "EV_A7_LR_TEMP"
+            role: "OBSERVE"
+    conditions: []
+    actions:
+      - id: "A_A7_LR_3"
+        type: "capability_actuation"
+        action: "OPEN"
+        applies_to_device_id: "D73"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A7_LR_WINDOW_CONTROL"
+            role: "ACTUATE"

@@ -1,0 +1,157 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A42
+      name: Apartment_42
+      category: ElderlyCouple
+      rooms:
+      - id: R421
+        name: LivingRoom
+        devices:
+        - id: D4211
+          name: RobotVacuum_A42
+          type: robot_vacuum
+          platform: openHAB
+          capabilities:
+          - id: CAP_A42_LR_VACUUM
+            name: RUN
+          states:
+          - id: ST_A42_LR_VACUUM
+            name: VACUUM_RUNNING
+        - id: D4212
+          name: MotionSensor_A42
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A42_LR_MOTION
+            name: MOTION_DETECTED
+        - id: D4213
+          name: AlarmSystem_A42
+          type: alarm_siren
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A42_LR_ALARM
+            name: ALARM_CONTROL
+          states:
+          - id: ST_A42_LR_ALARM
+            name: ALARM_STATE
+        - id: D4214
+          name: PetDoor_A42
+          type: pet_door
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A42_LR_PETDOOR
+            name: DOOR_CONTROL
+          states:
+          - id: ST_A42_LR_PETDOOR
+            name: PETDOOR_STATE
+semantics:
+  affects:
+  - from_capability_id: CAP_A42_LR_VACUUM
+    to_state_id: ST_A42_LR_VACUUM
+    note: Vacuum actuation changes vacuum state.
+  - from_capability_id: CAP_A42_LR_VACUUM
+    to_state_id: ST_A42_LR_MOTION
+    note: Robot vacuum movement triggers motion sensor.
+  - from_capability_id: CAP_A42_LR_ALARM
+    to_state_id: ST_A42_LR_ALARM
+    note: Alarm actuation changes alarm state.
+  - from_capability_id: CAP_A42_LR_PETDOOR
+    to_state_id: ST_A42_LR_PETDOOR
+    note: Pet door actuation changes door state.
+evars: []
+contexts:
+- id: CTX_A42_AWAY
+  name: Away
+  scope: apartment
+  scope_id: A42
+states: []
+rules:
+- id: R_A42_LR_1
+  name: Scheduled Vacuum Cleanup
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A42
+  description: Runs robot vacuum on schedule when away.
+  triggers: []
+  conditions:
+  - id: C_A42_LR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A42_AWAY
+      role: CHECK
+  actions:
+  - id: A_A42_LR_1
+    type: capability_actuation
+    action: START
+    applies_to_device_id: D4211
+    targets:
+    - kind: Capability
+      id: CAP_A42_LR_VACUUM
+      role: ACTUATE
+- id: R_A42_LR_2
+  name: Away Motion Alarm
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A42
+  description: Triggers alarm when motion detected while away - physical conflict with vacuum movement triggering false alarm.
+  triggers:
+  - id: T_A42_LR_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A42_LR_MOTION
+      role: OBSERVE
+  conditions:
+  - id: C_A42_LR_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A42_AWAY
+      role: CHECK
+  actions:
+  - id: A_A42_LR_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4213
+    targets:
+    - kind: Capability
+      id: CAP_A42_LR_ALARM
+      role: ACTUATE
+- id: R_A42_LR_3
+  name: Away Pet Door Lock
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A42
+  description: Locks pet door when away to prevent intrusion - physical conflict with pet wanting to come in causing motion that triggers alarm.
+  triggers: []
+  conditions:
+  - id: C_A42_LR_3
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A42_AWAY
+      role: CHECK
+  actions:
+  - id: A_A42_LR_3
+    type: capability_actuation
+    action: LOCK
+    applies_to_device_id: D4214
+    targets:
+    - kind: Capability
+      id: CAP_A42_LR_PETDOOR
+      role: ACTUATE

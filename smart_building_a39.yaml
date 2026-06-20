@@ -1,0 +1,139 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A39
+      name: Apartment_39
+      category: ElderlyCouple
+      rooms:
+      - id: R391
+        name: Bedroom
+        devices:
+        - id: D3911
+          name: BedroomLight_A39
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A39_BR_LIGHT
+            name: POWER
+          states:
+          - id: ST_A39_BR_LIGHT
+            name: LIGHT_POWER
+        - id: D3912
+          name: BedroomThermostat_A39
+          type: thermostat
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A39_BR_THERMO
+            name: TEMP_SET
+          states:
+          - id: ST_A39_BR_THERMO_TEMP
+            name: SET_TEMP
+        - id: D3913
+          name: BedroomFan_A39
+          type: ceiling_fan
+          platform: openHAB
+          capabilities:
+          - id: CAP_A39_BR_FAN
+            name: POWER
+          states:
+          - id: ST_A39_BR_FAN
+            name: FAN_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A39_BR_LIGHT
+    to_state_id: ST_A39_BR_LIGHT
+    note: Light actuation changes light state.
+  - from_capability_id: CAP_A39_BR_THERMO
+    to_state_id: ST_A39_BR_THERMO_TEMP
+    note: Thermostat actuation changes setpoint.
+  - from_capability_id: CAP_A39_BR_FAN
+    to_state_id: ST_A39_BR_FAN
+    note: Fan actuation changes fan state.
+evars: []
+contexts:
+- id: CTX_A39_SLEEP
+  name: SleepMode
+  scope: apartment
+  scope_id: A39
+states: []
+rules:
+- id: R_A39_BR_1
+  name: Sleep Mode Lights Off
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A39
+  description: Turns off bedroom light during sleep mode.
+  triggers: []
+  conditions:
+  - id: C_A39_BR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A39_SLEEP
+      role: CHECK
+  actions:
+  - id: A_A39_BR_1
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D3911
+    targets:
+    - kind: Capability
+      id: CAP_A39_BR_LIGHT
+      role: ACTUATE
+- id: R_A39_BR_2
+  name: Sleep Mode Comfort Temp
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A39
+  description: Sets thermostat to 20 degrees in sleep mode.
+  triggers: []
+  conditions:
+  - id: C_A39_BR_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A39_SLEEP
+      role: CHECK
+  actions:
+  - id: A_A39_BR_2
+    type: capability_actuation
+    action: SET_TEMP_20
+    applies_to_device_id: D3912
+    targets:
+    - kind: Capability
+      id: CAP_A39_BR_THERMO
+      role: ACTUATE
+- id: R_A39_BR_3
+  name: Sleep Mode Fan On Low
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A39
+  description: Turns on ceiling fan at low speed for circulation in sleep mode.
+  triggers: []
+  conditions:
+  - id: C_A39_BR_3
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A39_SLEEP
+      role: CHECK
+  actions:
+  - id: A_A39_BR_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3913
+    targets:
+    - kind: Capability
+      id: CAP_A39_BR_FAN
+      role: ACTUATE

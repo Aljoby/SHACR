@@ -1,0 +1,175 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A44
+      name: Apartment_44
+      category: FamilyWithKids
+      rooms:
+      - id: R441
+        name: Kitchen
+        devices:
+        - id: D4411
+          name: KitchenStove_A44
+          type: smart_stove
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A44_KT_STOVE
+            name: POWER
+          states:
+          - id: ST_A44_KT_STOVE
+            name: STOVE_POWER
+        - id: D4412
+          name: KitchenSmokeSensor_A44
+          type: smoke_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A44_KT_SMOKE
+            name: SMOKE_DETECTED
+        - id: D4413
+          name: KitchenWindow_A44
+          type: smart_window
+          platform: openHAB
+          capabilities:
+          - id: CAP_A44_KT_WINDOW
+            name: WINDOW_CONTROL
+          states:
+          - id: ST_A44_KT_WINDOW
+            name: WINDOW_STATE
+        - id: D4414
+          name: KitchenAlarm_A44
+          type: alarm_siren
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A44_KT_ALARM
+            name: ALARM_CONTROL
+          states:
+          - id: ST_A44_KT_ALARM
+            name: ALARM_STATE
+semantics:
+  affects:
+  - from_capability_id: CAP_A44_KT_STOVE
+    to_state_id: ST_A44_KT_STOVE
+    note: Stove actuation changes stove state.
+  - from_capability_id: CAP_A44_KT_WINDOW
+    to_state_id: ST_A44_KT_WINDOW
+    note: Window actuation changes window state.
+  - from_capability_id: CAP_A44_KT_ALARM
+    to_state_id: ST_A44_KT_ALARM
+    note: Alarm actuation changes alarm state.
+  - from_capability_id: CAP_A44_KT_STOVE
+    to_state_id: ST_A44_KT_SMOKE
+    note: Stove operation can produce smoke detected by sensor.
+evars: []
+contexts:
+- id: CTX_A44_AWAY
+  name: Away
+  scope: apartment
+  scope_id: A44
+states: []
+rules:
+- id: R_A44_KT_1
+  name: Smoke Open Window
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A44
+  description: Opens kitchen window when smoke is detected for ventilation.
+  triggers:
+  - id: T_A44_KT_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A44_KT_SMOKE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A44_KT_1
+    type: capability_actuation
+    action: OPEN
+    applies_to_device_id: D4413
+    targets:
+    - kind: Capability
+      id: CAP_A44_KT_WINDOW
+      role: ACTUATE
+- id: R_A44_KT_2
+  name: Away Window Close
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A44
+  description: Closes kitchen window when away for security - logical conflict with smoke open if smoke happens while away.
+  triggers: []
+  conditions:
+  - id: C_A44_KT_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A44_AWAY
+      role: CHECK
+  actions:
+  - id: A_A44_KT_2
+    type: capability_actuation
+    action: CLOSE
+    applies_to_device_id: D4413
+    targets:
+    - kind: Capability
+      id: CAP_A44_KT_WINDOW
+      role: ACTUATE
+- id: R_A44_KT_3
+  name: Smoke Stove Off
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A44
+  description: Turns off stove when smoke is detected for safety.
+  triggers:
+  - id: T_A44_KT_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A44_KT_SMOKE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A44_KT_3
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D4411
+    targets:
+    - kind: Capability
+      id: CAP_A44_KT_STOVE
+      role: ACTUATE
+- id: R_A44_KT_4
+  name: Smoke Alarm Activate
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A44
+  description: Activates kitchen alarm when smoke detected.
+  triggers:
+  - id: T_A44_KT_4
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A44_KT_SMOKE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A44_KT_4
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4414
+    targets:
+    - kind: Capability
+      id: CAP_A44_KT_ALARM
+      role: ACTUATE

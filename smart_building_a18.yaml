@@ -1,0 +1,167 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A18
+      name: Apartment_18
+      category: Elderly
+      rooms:
+      - id: R181
+        name: Bedroom
+        devices:
+        - id: D181
+          name: BedroomMotionSensor_A18
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A18_BR_MOTION
+            name: MOTION_DETECTED
+        - id: D182
+          name: BedroomLight_A18
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A18_BR_LIGHT_POWER
+            name: POWER
+          states:
+          - id: ST_A18_BR_LIGHT_POWER
+            name: LIGHT_POWER
+      - id: R182
+        name: LivingRoom
+        devices:
+        - id: D183
+          name: LivingRoomNightLight_A18
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A18_LR_NIGHTLIGHT_POWER
+            name: POWER
+          states:
+          - id: ST_A18_LR_NIGHTLIGHT_POWER
+            name: LIGHT_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A18_BR_LIGHT_POWER
+    to_state_id: ST_A18_BR_LIGHT_POWER
+    note: Bedroom light power actuation changes bedroom light state.
+  - from_capability_id: CAP_A18_LR_NIGHTLIGHT_POWER
+    to_state_id: ST_A18_LR_NIGHTLIGHT_POWER
+    note: Night light actuation changes night light state.
+evars: []
+contexts:
+- id: CTX_A18_SLEEP_TIME
+  name: SleepTime
+  scope: apartment
+  scope_id: A18
+- id: CTX_A18_ENERGY_SAVING
+  name: EnergySavingOn
+  scope: apartment
+  scope_id: A18
+states: []
+rules:
+- id: R_A18_BR_1
+  name: Bedroom Motion Light
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A18
+  description: Turns on the bedroom light when motion is detected.
+  triggers:
+  - id: T_A18_BR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A18_BR_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A18_BR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D182
+    targets:
+    - kind: Capability
+      id: CAP_A18_BR_LIGHT_POWER
+      role: ACTUATE
+- id: R_A18_BR_2
+  name: Sleep Time Lights Off
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A18
+  description: Keeps the bedroom light off during sleep time.
+  triggers: []
+  conditions:
+  - id: C_A18_BR_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A18_SLEEP_TIME
+      role: CHECK
+  actions:
+  - id: A_A18_BR_2
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D182
+    targets:
+    - kind: Capability
+      id: CAP_A18_BR_LIGHT_POWER
+      role: ACTUATE
+- id: R_A18_LR_1
+  name: Night Light Safety
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A18
+  description: Turns on the living room night light when sleep time is active for
+    safe passage.
+  triggers: []
+  conditions:
+  - id: C_A18_LR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A18_SLEEP_TIME
+      role: CHECK
+  actions:
+  - id: A_A18_LR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D183
+    targets:
+    - kind: Capability
+      id: CAP_A18_LR_NIGHTLIGHT_POWER
+      role: ACTUATE
+- id: R_A18_LR_2
+  name: Energy Saving Night Light Off
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A18
+  description: Turns off the night light when energy-saving mode is enabled.
+  triggers: []
+  conditions:
+  - id: C_A18_LR_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A18_ENERGY_SAVING
+      role: CHECK
+  actions:
+  - id: A_A18_LR_2
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D183
+    targets:
+    - kind: Capability
+      id: CAP_A18_LR_NIGHTLIGHT_POWER
+      role: ACTUATE

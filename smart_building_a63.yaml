@@ -1,0 +1,137 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A63
+      name: Apartment_63
+      category: ElderlyCouple
+      rooms:
+      - id: R631
+        name: LivingRoom
+        devices:
+        - id: D631
+          name: LivingRoomFallSensor_A63
+          type: fall_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A63_LR_FALL_DETECTED
+            name: FALL_DETECTED
+        - id: D632
+          name: LivingRoomEmergencyLight_A63
+          type: smart_light
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A63_LR_LIGHT_POWER
+            name: POWER
+          states:
+          - id: ST_A63_LR_LIGHT_POWER
+            name: LIGHT_POWER
+        - id: D633
+          name: LivingRoomNotifier_A63
+          type: notifier
+          platform: openHAB
+          capabilities:
+          - id: CAP_A63_LR_NOTIFY
+            name: NOTIFY
+          states:
+          - id: ST_A63_LR_NOTIFY_STATE
+            name: NOTIFY_STATE
+      - id: R632
+        name: Bedroom
+        devices:
+        - id: D634
+          name: BedroomMedicationDispenser_A63
+          type: medication_dispenser
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A63_BR_DISPENSE
+            name: DISPENSE
+          states:
+          - id: ST_A63_BR_DISPENSED
+            name: MEDICATION_DISPENSED
+semantics:
+  affects:
+  - from_capability_id: CAP_A63_LR_LIGHT_POWER
+    to_state_id: ST_A63_LR_LIGHT_POWER
+    note: Emergency light power actuation changes light state.
+  - from_capability_id: CAP_A63_LR_NOTIFY
+    to_state_id: ST_A63_LR_NOTIFY_STATE
+    note: Notifier actuation changes notification state.
+  - from_capability_id: CAP_A63_BR_DISPENSE
+    to_state_id: ST_A63_BR_DISPENSED
+    note: Medication dispenser actuation changes dispensed state.
+evars: []
+contexts: []
+states: []
+rules:
+- id: R_A63_LR_1
+  name: Fall Detection Emergency Light
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A63
+  description: Turns on the emergency light when a fall is detected in the living room.
+  triggers:
+  - id: T_A63_LR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A63_LR_FALL_DETECTED
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A63_LR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D632
+    targets:
+    - kind: Capability
+      id: CAP_A63_LR_LIGHT_POWER
+      role: ACTUATE
+- id: R_A63_LR_2
+  name: Fall Detection Notify
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A63
+  description: Sends an emergency notification when a fall is detected in the living room.
+  triggers:
+  - id: T_A63_LR_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A63_LR_FALL_DETECTED
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A63_LR_2
+    type: capability_actuation
+    action: SEND
+    applies_to_device_id: D633
+    targets:
+    - kind: Capability
+      id: CAP_A63_LR_NOTIFY
+      role: ACTUATE
+- id: R_A63_BR_1
+  name: Morning Medication Dispense
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A63
+  description: Dispenses scheduled morning medication from the bedroom dispenser.
+  triggers: []
+  conditions: []
+  actions:
+  - id: A_A63_BR_1
+    type: capability_actuation
+    action: DISPENSE
+    applies_to_device_id: D634
+    targets:
+    - kind: Capability
+      id: CAP_A63_BR_DISPENSE
+      role: ACTUATE

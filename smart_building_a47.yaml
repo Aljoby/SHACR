@@ -1,0 +1,135 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A47
+      name: Apartment_47
+      category: PetOwner
+      rooms:
+      - id: R471
+        name: LivingRoom
+        devices:
+        - id: D4711
+          name: PetFeeder_A47
+          type: pet_feeder
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A47_LR_FEEDER
+            name: DISPENSE
+          states:
+          - id: ST_A47_LR_FEEDER
+            name: FEEDER_STATE
+        - id: D4712
+          name: PetWaterFountain_A47
+          type: water_fountain
+          platform: openHAB
+          capabilities:
+          - id: CAP_A47_LR_FOUNTAIN
+            name: POWER
+          states:
+          - id: ST_A47_LR_FOUNTAIN
+            name: FOUNTAIN_POWER
+        - id: D4713
+          name: PetCamera_A47
+          type: camera
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A47_LR_PETCAM
+            name: POWER
+          states:
+          - id: ST_A47_LR_PETCAM
+            name: PETCAM_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A47_LR_FEEDER
+    to_state_id: ST_A47_LR_FEEDER
+    note: Feeder actuation changes feeder state.
+  - from_capability_id: CAP_A47_LR_FOUNTAIN
+    to_state_id: ST_A47_LR_FOUNTAIN
+    note: Fountain actuation changes fountain state.
+  - from_capability_id: CAP_A47_LR_PETCAM
+    to_state_id: ST_A47_LR_PETCAM
+    note: Camera actuation changes camera state.
+evars: []
+contexts:
+- id: CTX_A47_AWAY
+  name: Away
+  scope: apartment
+  scope_id: A47
+- id: CTX_A47_FEEDING_TIME
+  name: FeedingTime
+  scope: apartment
+  scope_id: A47
+states: []
+rules:
+- id: R_A47_LR_1
+  name: Scheduled Pet Feeding
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A47
+  description: Dispenses pet food at scheduled feeding time.
+  triggers: []
+  conditions:
+  - id: C_A47_LR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A47_FEEDING_TIME
+      role: CHECK
+  actions:
+  - id: A_A47_LR_1
+    type: capability_actuation
+    action: DISPENSE
+    applies_to_device_id: D4711
+    targets:
+    - kind: Capability
+      id: CAP_A47_LR_FEEDER
+      role: ACTUATE
+- id: R_A47_LR_2
+  name: Always On Pet Fountain
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A47
+  description: Keeps water fountain running at all times.
+  triggers: []
+  conditions: []
+  actions:
+  - id: A_A47_LR_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4712
+    targets:
+    - kind: Capability
+      id: CAP_A47_LR_FOUNTAIN
+      role: ACTUATE
+- id: R_A47_LR_3
+  name: Away Pet Camera On
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A47
+  description: Powers on pet camera when away to monitor pet remotely.
+  triggers: []
+  conditions:
+  - id: C_A47_LR_3
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A47_AWAY
+      role: CHECK
+  actions:
+  - id: A_A47_LR_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4713
+    targets:
+    - kind: Capability
+      id: CAP_A47_LR_PETCAM
+      role: ACTUATE

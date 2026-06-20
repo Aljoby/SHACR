@@ -1,0 +1,117 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A32
+      name: Apartment_32
+      category: YoungProfessional
+      rooms:
+      - id: R321
+        name: Bathroom
+        devices:
+        - id: D3211
+          name: BathroomHumiditySensor_A32
+          type: humidity_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A32_BA_HUMIDITY
+            name: HUMIDITY_LEVEL
+        - id: D3212
+          name: BathroomFan_A32
+          type: exhaust_fan
+          platform: openHAB
+          capabilities:
+          - id: CAP_A32_BA_FAN
+            name: POWER
+          states:
+          - id: ST_A32_BA_FAN
+            name: FAN_POWER
+        - id: D3213
+          name: BathroomLight_A32
+          type: smart_light
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A32_BA_LIGHT
+            name: POWER
+          states:
+          - id: ST_A32_BA_LIGHT
+            name: LIGHT_POWER
+        - id: D3214
+          name: BathroomMotion_A32
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A32_BA_MOTION
+            name: MOTION_DETECTED
+semantics:
+  affects:
+  - from_capability_id: CAP_A32_BA_FAN
+    to_state_id: ST_A32_BA_FAN
+    note: Fan actuation changes fan state.
+  - from_capability_id: CAP_A32_BA_LIGHT
+    to_state_id: ST_A32_BA_LIGHT
+    note: Light actuation changes light state.
+  - from_capability_id: CAP_A32_BA_FAN
+    to_evar_id: EV_A32_BA_HUMIDITY
+    note: Running the fan reduces bathroom humidity.
+evars:
+- id: EV_A32_BA_HUMIDITY
+  name: BathroomAmbientHumidity
+  scope: room
+  scope_id: R321
+contexts: []
+states: []
+rules:
+- id: R_A32_BA_1
+  name: High Humidity Fan On
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A32
+  description: Turns on bathroom exhaust fan when humidity exceeds 70 percent.
+  triggers:
+  - id: T_A32_BA_1
+    type: state
+    operator: '>'
+    value: 70
+    targets:
+    - kind: State
+      id: ST_A32_BA_HUMIDITY
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A32_BA_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3212
+    targets:
+    - kind: Capability
+      id: CAP_A32_BA_FAN
+      role: ACTUATE
+- id: R_A32_BA_2
+  name: Bathroom Motion Light
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A32
+  description: Turns on bathroom light when motion is detected.
+  triggers:
+  - id: T_A32_BA_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A32_BA_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A32_BA_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3213
+    targets:
+    - kind: Capability
+      id: CAP_A32_BA_LIGHT
+      role: ACTUATE

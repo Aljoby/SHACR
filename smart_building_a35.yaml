@@ -1,0 +1,153 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A35
+      name: Apartment_35
+      category: YoungProfessional
+      rooms:
+      - id: R351
+        name: Bedroom
+        devices:
+        - id: D3511
+          name: BedroomTempSensor_A35
+          type: temperature_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A35_BR_TEMP
+            name: TEMP_READING
+        - id: D3512
+          name: BedroomAC_A35
+          type: air_conditioner
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A35_BR_AC
+            name: POWER
+          states:
+          - id: ST_A35_BR_AC
+            name: AC_POWER
+        - id: D3513
+          name: BedroomWindow_A35
+          type: smart_window
+          platform: openHAB
+          capabilities:
+          - id: CAP_A35_BR_WINDOW
+            name: WINDOW_CONTROL
+          states:
+          - id: ST_A35_BR_WINDOW
+            name: WINDOW_STATE
+        - id: D3514
+          name: BedroomCO2Sensor_A35
+          type: air_quality_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A35_BR_CO2
+            name: CO2_LEVEL
+semantics:
+  affects:
+  - from_capability_id: CAP_A35_BR_AC
+    to_state_id: ST_A35_BR_AC
+    note: AC actuation changes AC state.
+  - from_capability_id: CAP_A35_BR_WINDOW
+    to_state_id: ST_A35_BR_WINDOW
+    note: Window actuation changes window state.
+  - from_capability_id: CAP_A35_BR_AC
+    to_evar_id: EV_A35_BR_TEMP
+    note: AC operation decreases bedroom temperature.
+  - from_capability_id: CAP_A35_BR_WINDOW
+    to_evar_id: EV_A35_BR_TEMP
+    note: Open windows affect bedroom temperature.
+  - from_capability_id: CAP_A35_BR_WINDOW
+    to_evar_id: EV_A35_BR_CO2
+    note: Open windows decrease CO2 level.
+evars:
+- id: EV_A35_BR_TEMP
+  name: BedroomTemperature
+  scope: room
+  scope_id: R351
+- id: EV_A35_BR_CO2
+  name: BedroomCO2
+  scope: room
+  scope_id: R351
+contexts: []
+states: []
+rules:
+- id: R_A35_BR_1
+  name: Hot Temperature AC On
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A35
+  description: Turns on AC when bedroom temperature is high.
+  triggers:
+  - id: T_A35_BR_1
+    type: state
+    operator: '>'
+    value: 26
+    targets:
+    - kind: State
+      id: ST_A35_BR_TEMP
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A35_BR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3512
+    targets:
+    - kind: Capability
+      id: CAP_A35_BR_AC
+      role: ACTUATE
+- id: R_A35_BR_2
+  name: High CO2 Open Window
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A35
+  description: Opens window when CO2 level exceeds threshold for ventilation - physical conflict with AC operation due to energy waste and temperature regulation.
+  triggers:
+  - id: T_A35_BR_2
+    type: state
+    operator: '>'
+    value: 1000
+    targets:
+    - kind: State
+      id: ST_A35_BR_CO2
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A35_BR_2
+    type: capability_actuation
+    action: OPEN
+    applies_to_device_id: D3513
+    targets:
+    - kind: Capability
+      id: CAP_A35_BR_WINDOW
+      role: ACTUATE
+- id: R_A35_BR_3
+  name: Cool Air Maintain AC
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A35
+  description: Keeps AC running when window is open - physical conflict that wastes energy and creates uncomfortable airflow.
+  triggers:
+  - id: T_A35_BR_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A35_BR_WINDOW
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A35_BR_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3512
+    targets:
+    - kind: Capability
+      id: CAP_A35_BR_AC
+      role: ACTUATE

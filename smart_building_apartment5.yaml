@@ -1,0 +1,193 @@
+topology:
+  building:
+    id: "B1"
+    name: "SmartBuilding_1"
+    apartments:
+      - id: "A5"
+        name: "Apartment_5"
+        rooms:
+          - id: "R51"
+            name: "Entrance"
+            devices:
+              - id: "D51"
+                name: "DoorContact_Entrance"
+                type: "door_contact_sensor"
+                platform: "HomeAssistant"
+                states:
+                  - id: "ST_A5_ENT_DOOR_OPEN"
+                    name: "DOOR_OPEN"
+              - id: "D52"
+                name: "EntranceLight_A5"
+                type: "smart_light"
+                platform: "SmartThings"
+                capabilities:
+                  - id: "CAP_A5_ENT_LIGHT_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_A5_ENT_LIGHT_POWER"
+                    name: "LIGHT_POWER"
+
+          - id: "R52"
+            name: "Hallway"
+            devices:
+              - id: "D53"
+                name: "BoschSmokeDetector_Hallway"
+                type: "smoke_sensor"
+                platform: "openHAB"
+                states:
+                  - id: "ST_A5_HAL_SMOKE"
+                    name: "SMOKE_DETECTED"
+              - id: "D54"
+                name: "HallwayLight_A5"
+                type: "smart_light"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_A5_HAL_LIGHT_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_A5_HAL_LIGHT_POWER"
+                    name: "LIGHT_POWER"
+
+          - id: "R53"
+            name: "Bedroom"
+            devices:
+              - id: "D55"
+                name: "BedroomSmartPlug_A5"
+                type: "smart_plug"
+                platform: "SmartThings"
+                capabilities:
+                  - id: "CAP_A5_BR_PLUG_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_A5_BR_PLUG_POWER"
+                    name: "PLUG_POWER"
+              - id: "D56"
+                name: "BedroomNightSchedule"
+                type: "virtual_clock"
+                platform: "HomeAssistant"
+                states:
+                  - id: "ST_A5_BR_NIGHT_TIME"
+                    name: "NIGHT_TIME"
+
+semantics:
+  affects:
+    - from_capability_id: "CAP_A5_ENT_LIGHT_POWER"
+      to_state_id: "ST_A5_ENT_LIGHT_POWER"
+      note: "Light power actuation changes entrance light state."
+    - from_capability_id: "CAP_A5_HAL_LIGHT_POWER"
+      to_state_id: "ST_A5_HAL_LIGHT_POWER"
+      note: "Light power actuation changes hallway light state."
+    - from_capability_id: "CAP_A5_BR_PLUG_POWER"
+      to_state_id: "ST_A5_BR_PLUG_POWER"
+      note: "Plug power actuation changes bedroom smart plug state."
+
+contexts:
+  - id: "CTX_A5_EVENING"
+    name: "Evening"
+    scope: "apartment"
+    scope_id: "A5"
+
+  - id: "CTX_A5_OCCUPIED"
+    name: "Occupied"
+    scope: "apartment"
+    scope_id: "A5"
+
+states: []
+
+rules:
+  - id: "R_A5_ENT_1"
+    name: "Entrance Welcome Light"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A5"
+    description: "Turns on the entrance light when the entrance door opens in the evening while occupied."
+    triggers:
+      - id: "T_A5_ENT_1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A5_ENT_DOOR_OPEN"
+            role: "OBSERVE"
+    conditions:
+      - id: "C_A5_ENT_1"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_A5_EVENING"
+            role: "CHECK"
+      - id: "C_A5_ENT_2"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_A5_OCCUPIED"
+            role: "CHECK"
+    actions:
+      - id: "A_A5_ENT_1"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D52"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A5_ENT_LIGHT_POWER"
+            role: "ACTUATE"
+
+  - id: "R_A5_HAL_1"
+    name: "Hallway Smoke Safety Light"
+    platform: "openHAB"
+    applies_in:
+      kind: "Apartment"
+      id: "A5"
+    description: "Turns on the hallway light when smoke is detected, improving visibility for safe exit."
+    triggers:
+      - id: "T_A5_HAL_1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A5_HAL_SMOKE"
+            role: "OBSERVE"
+    conditions: []
+    actions:
+      - id: "A_A5_HAL_1"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D54"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A5_HAL_LIGHT_POWER"
+            role: "ACTUATE"
+
+  - id: "R_A5_BR_1"
+    name: "Bedroom Night Plug Off"
+    platform: "SmartThings"
+    applies_in:
+      kind: "Apartment"
+      id: "A5"
+    description: "Turns off the bedroom smart plug at night to reduce standby power usage."
+    triggers:
+      - id: "T_A5_BR_1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A5_BR_NIGHT_TIME"
+            role: "OBSERVE"
+    conditions: []
+    actions:
+      - id: "A_A5_BR_1"
+        type: "capability_actuation"
+        action: "OFF"
+        applies_to_device_id: "D55"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A5_BR_PLUG_POWER"
+            role: "ACTUATE"

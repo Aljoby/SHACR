@@ -1,0 +1,133 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A31
+      name: Apartment_31
+      category: Bachelor
+      rooms:
+      - id: R311
+        name: Entrance
+        devices:
+        - id: D3111
+          name: FrontDoorLock_A31
+          type: smart_lock
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A31_EN_LOCK
+            name: LOCK_CONTROL
+          states:
+          - id: ST_A31_EN_LOCK
+            name: LOCK_STATE
+        - id: D3112
+          name: DoorbellCamera_A31
+          type: camera
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A31_EN_CAM
+            name: POWER
+          states:
+          - id: ST_A31_EN_CAM
+            name: CAM_POWER
+        - id: D3113
+          name: PresenceSensor_A31
+          type: presence_sensor
+          platform: openHAB
+          states:
+          - id: ST_A31_EN_PRESENCE
+            name: USER_PRESENT
+semantics:
+  affects:
+  - from_capability_id: CAP_A31_EN_LOCK
+    to_state_id: ST_A31_EN_LOCK
+    note: Lock actuation changes lock state.
+  - from_capability_id: CAP_A31_EN_CAM
+    to_state_id: ST_A31_EN_CAM
+    note: Camera actuation changes camera state.
+evars: []
+contexts:
+- id: CTX_A31_NIGHT
+  name: Night
+  scope: apartment
+  scope_id: A31
+states: []
+rules:
+- id: R_A31_EN_1
+  name: Auto Lock Night
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A31
+  description: Locks the front door automatically at night for security.
+  triggers: []
+  conditions:
+  - id: C_A31_EN_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A31_NIGHT
+      role: CHECK
+  actions:
+  - id: A_A31_EN_1
+    type: capability_actuation
+    action: LOCK
+    applies_to_device_id: D3111
+    targets:
+    - kind: Capability
+      id: CAP_A31_EN_LOCK
+      role: ACTUATE
+- id: R_A31_EN_2
+  name: Welcome Home Unlock
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A31
+  description: Unlocks the front door when user presence is detected nearby - logical conflict with auto-lock at night.
+  triggers:
+  - id: T_A31_EN_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A31_EN_PRESENCE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A31_EN_2
+    type: capability_actuation
+    action: UNLOCK
+    applies_to_device_id: D3111
+    targets:
+    - kind: Capability
+      id: CAP_A31_EN_LOCK
+      role: ACTUATE
+- id: R_A31_EN_3
+  name: Camera Active On Presence
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A31
+  description: Powers on doorbell camera when presence detected.
+  triggers:
+  - id: T_A31_EN_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A31_EN_PRESENCE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A31_EN_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3112
+    targets:
+    - kind: Capability
+      id: CAP_A31_EN_CAM
+      role: ACTUATE

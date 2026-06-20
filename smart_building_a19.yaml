@@ -1,0 +1,264 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A19
+      name: Apartment_19
+      category: FamilyWithKids
+      rooms:
+      - id: R191
+        name: Entrance
+        devices:
+        - id: D191
+          name: EntranceMotionSensor_A19
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A19_ENT_MOTION
+            name: MOTION_DETECTED
+        - id: D192
+          name: EntranceDoorLock_A19
+          type: smart_lock
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A19_ENT_LOCK
+            name: LOCK
+          states:
+          - id: ST_A19_ENT_LOCK_STATE
+            name: LOCK_STATE
+        - id: D193
+          name: EntryPresenceVirtual_A19
+          type: virtual_presence
+          platform: HomeAssistant
+          states:
+          - id: ST_A19_ENT_PRESENCE
+            name: PRESENCE_DETECTED
+        - id: D194
+          name: EntranceDoorContact_A19
+          type: door_contact_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A19_ENT_DOOR_OPEN
+            name: DOOR_OPEN
+        - id: D195
+          name: EntranceLight_A19
+          type: smart_light
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A19_ENT_LIGHT_POWER
+            name: POWER
+          states:
+          - id: ST_A19_ENT_LIGHT_POWER
+            name: LIGHT_POWER
+      - id: R192
+        name: LivingRoom
+        devices:
+        - id: D196
+          name: RobotVacuum_A19
+          type: robot_vacuum
+          platform: openHAB
+          capabilities:
+          - id: CAP_A19_LR_VACUUM_RUN
+            name: RUN
+          states:
+          - id: ST_A19_LR_VACUUM_RUNNING
+            name: VACUUM_RUNNING
+        - id: D197
+          name: HallwayCamera_A19
+          type: camera
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A19_HAL_CAM_POWER
+            name: POWER
+          states:
+          - id: ST_A19_HAL_CAM_POWER
+            name: CAMERA_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A19_ENT_LOCK
+    to_state_id: ST_A19_ENT_LOCK_STATE
+    note: Lock actuation changes entrance door lock state.
+  - from_capability_id: CAP_A19_ENT_LIGHT_POWER
+    to_state_id: ST_A19_ENT_LIGHT_POWER
+    note: Light power actuation changes entrance light state.
+  - from_capability_id: CAP_A19_HAL_CAM_POWER
+    to_state_id: ST_A19_HAL_CAM_POWER
+    note: Camera power actuation changes hallway camera power state.
+  - from_capability_id: CAP_A19_LR_VACUUM_RUN
+    to_state_id: ST_A19_LR_VACUUM_RUNNING
+    note: Vacuum actuation changes robot vacuum running state.
+  - from_capability_id: CAP_A19_LR_VACUUM_RUN
+    to_state_id: ST_A19_ENT_MOTION
+    note: Robot vacuum movement may be sensed as entrance motion near the open-plan
+      entry.
+evars: []
+contexts:
+- id: CTX_A19_DAYTIME
+  name: Daytime
+  scope: apartment
+  scope_id: A19
+- id: CTX_A19_AWAY
+  name: Away
+  scope: apartment
+  scope_id: A19
+states: []
+rules:
+- id: R_A19_ENT_1
+  name: Entrance Presence Mirror
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A19
+  description: Marks presence as detected when entrance motion is observed.
+  triggers:
+  - id: T_A19_ENT_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A19_ENT_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A19_ENT_1
+    type: state_update
+    action: SET_TRUE
+    applies_to_device_id: D193
+    targets:
+    - kind: State
+      id: ST_A19_ENT_PRESENCE
+      role: ACTUATE
+- id: R_A19_ENT_2
+  name: Unlock On Presence
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A19
+  description: Unlocks the entrance door when presence is detected during expected
+    daytime arrival.
+  triggers:
+  - id: T_A19_ENT_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A19_ENT_PRESENCE
+      role: OBSERVE
+  conditions:
+  - id: C_A19_ENT_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A19_DAYTIME
+      role: CHECK
+  actions:
+  - id: A_A19_ENT_2
+    type: capability_actuation
+    action: UNLOCK
+    applies_to_device_id: D192
+    targets:
+    - kind: Capability
+      id: CAP_A19_ENT_LOCK
+      role: ACTUATE
+- id: R_A19_LR_1
+  name: Robot Vacuum Daily Run
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A19
+  description: Runs the robot vacuum for routine cleaning.
+  triggers: []
+  conditions: []
+  actions:
+  - id: A_A19_LR_1
+    type: capability_actuation
+    action: START
+    applies_to_device_id: D196
+    targets:
+    - kind: Capability
+      id: CAP_A19_LR_VACUUM_RUN
+      role: ACTUATE
+- id: R_A19_ENT_3
+  name: Entrance Welcome Light
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A19
+  description: Turns on the entrance light when the door opens.
+  triggers:
+  - id: T_A19_ENT_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A19_ENT_DOOR_OPEN
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A19_ENT_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D195
+    targets:
+    - kind: Capability
+      id: CAP_A19_ENT_LIGHT_POWER
+      role: ACTUATE
+- id: R_A19_HAL_1
+  name: Camera Anti-Glare Off
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A19
+  description: Turns off the hallway camera when the entrance light is on to reduce
+    glare.
+  triggers:
+  - id: T_A19_HAL_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A19_ENT_LIGHT_POWER
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A19_HAL_1
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D197
+    targets:
+    - kind: Capability
+      id: CAP_A19_HAL_CAM_POWER
+      role: ACTUATE
+- id: R_A19_HAL_2
+  name: Away Surveillance
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A19
+  description: Turns on the hallway camera while the apartment is away.
+  triggers: []
+  conditions:
+  - id: C_A19_HAL_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A19_AWAY
+      role: CHECK
+  actions:
+  - id: A_A19_HAL_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D197
+    targets:
+    - kind: Capability
+      id: CAP_A19_HAL_CAM_POWER
+      role: ACTUATE

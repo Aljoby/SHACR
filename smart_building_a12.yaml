@@ -1,0 +1,101 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A12
+      name: Apartment_12
+      category: FamilyWithKids
+      rooms:
+      - id: R121
+        name: Nursery
+        devices:
+        - id: D121
+          name: NurserySpeaker_A12
+          type: smart_speaker
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A12_NUR_SPK_VOLUME
+            name: VOLUME
+          states:
+          - id: ST_A12_NUR_SPK_MUTED
+            name: MUTED_STATE
+        - id: D122
+          name: NurserySoundMachine_A12
+          type: sound_machine
+          platform: SmartThings
+          states:
+          - id: ST_A12_NUR_BABY_SLEEPING
+            name: BABY_SLEEPING
+      - id: R122
+        name: Hallway
+        devices:
+        - id: D123
+          name: HallwaySmokeSensor_A12
+          type: smoke_sensor
+          platform: openHAB
+          states:
+          - id: ST_A12_HAL_SMOKE
+            name: SMOKE_DETECTED
+semantics:
+  affects:
+  - from_capability_id: CAP_A12_NUR_SPK_VOLUME
+    to_state_id: ST_A12_NUR_SPK_MUTED
+    note: Speaker volume control changes the muted state.
+evars: []
+contexts: []
+states: []
+rules:
+- id: R_A12_NUR_1
+  name: Baby Sleeping Mute
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A12
+  description: Mutes the nursery speaker when the baby sleeping state is active.
+  triggers:
+  - id: T_A12_NUR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A12_NUR_BABY_SLEEPING
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A12_NUR_1
+    type: capability_actuation
+    action: MUTE
+    applies_to_device_id: D121
+    targets:
+    - kind: Capability
+      id: CAP_A12_NUR_SPK_VOLUME
+      role: ACTUATE
+- id: R_A12_HAL_1
+  name: Smoke Alert Announcement
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A12
+  description: Uses the nursery speaker for audible smoke alerts when hallway smoke
+    is detected.
+  triggers:
+  - id: T_A12_HAL_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A12_HAL_SMOKE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A12_HAL_1
+    type: capability_actuation
+    action: ANNOUNCE
+    applies_to_device_id: D121
+    targets:
+    - kind: Capability
+      id: CAP_A12_NUR_SPK_VOLUME
+      role: ACTUATE

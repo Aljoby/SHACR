@@ -1,0 +1,139 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A29
+      name: Apartment_29
+      category: ElderlyCouple
+      rooms:
+      - id: R291
+        name: LivingRoom
+        devices:
+        - id: D2911
+          name: LivingRoomTempSensor_A29
+          type: temperature_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A29_LR_TEMP_READING
+            name: TEMP_READING
+        - id: D2912
+          name: LivingRoomHeater_A29
+          type: smart_heater
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A29_LR_HEATER
+            name: POWER
+          states:
+          - id: ST_A29_LR_HEATER
+            name: HEATER_POWER
+        - id: D2913
+          name: LivingRoomAC_A29
+          type: air_conditioner
+          platform: openHAB
+          capabilities:
+          - id: CAP_A29_LR_AC
+            name: POWER
+          states:
+          - id: ST_A29_LR_AC
+            name: AC_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A29_LR_HEATER
+    to_state_id: ST_A29_LR_HEATER
+    note: Heater power actuation changes heater state.
+  - from_capability_id: CAP_A29_LR_AC
+    to_state_id: ST_A29_LR_AC
+    note: AC power actuation changes AC state.
+  - from_capability_id: CAP_A29_LR_HEATER
+    to_evar_id: EV_A29_LR_TEMP
+    note: Heater operation increases living room ambient temperature.
+  - from_capability_id: CAP_A29_LR_AC
+    to_evar_id: EV_A29_LR_TEMP
+    note: AC operation decreases living room ambient temperature.
+evars:
+- id: EV_A29_LR_TEMP
+  name: LivingRoomAmbientTemperature
+  scope: room
+  scope_id: R291
+contexts: []
+states: []
+rules:
+- id: R_A29_LR_1
+  name: Cold Comfort Heater
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A29
+  description: Turns on heater when temperature drops below 22 degrees.
+  triggers:
+  - id: T_A29_LR_1
+    type: state
+    operator: <
+    value: 22
+    targets:
+    - kind: State
+      id: ST_A29_LR_TEMP_READING
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A29_LR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D2912
+    targets:
+    - kind: Capability
+      id: CAP_A29_LR_HEATER
+      role: ACTUATE
+- id: R_A29_LR_2
+  name: Warm Comfort AC
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A29
+  description: Turns on AC when temperature rises above 24 degrees.
+  triggers:
+  - id: T_A29_LR_2
+    type: state
+    operator: '>'
+    value: 24
+    targets:
+    - kind: State
+      id: ST_A29_LR_TEMP_READING
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A29_LR_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D2913
+    targets:
+    - kind: Capability
+      id: CAP_A29_LR_AC
+      role: ACTUATE
+- id: R_A29_LR_3
+  name: AC With Heater Conflict
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A29
+  description: Activates AC when heater is on to balance temperature - causes physical conflict where heater and AC fight each other on the EVar.
+  triggers:
+  - id: T_A29_LR_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A29_LR_HEATER
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A29_LR_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D2913
+    targets:
+    - kind: Capability
+      id: CAP_A29_LR_AC
+      role: ACTUATE

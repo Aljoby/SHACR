@@ -1,0 +1,125 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A24
+      name: Apartment_24
+      category: FamilyWithKids
+      rooms:
+      - id: R241
+        name: Bedroom
+        devices:
+        - id: D241
+          name: BedroomMorningClock_A24
+          type: virtual_clock
+          platform: HomeAssistant
+          states:
+          - id: ST_A24_BR_MORNING
+            name: MORNING_TIME
+        - id: D242
+          name: BedroomShade_A24
+          type: smart_blind
+          platform: openHAB
+          capabilities:
+          - id: CAP_A24_BR_SHADE
+            name: SHADE_CONTROL
+          states:
+          - id: ST_A24_BR_SHADE_STATE
+            name: SHADE_STATE
+      - id: R242
+        name: Kitchen
+        devices:
+        - id: D243
+          name: KitchenLeakSensor_A24
+          type: water_leak_sensor
+          platform: openHAB
+          states:
+          - id: ST_A24_KIT_LEAK
+            name: WATER_LEAK_DETECTED
+        - id: D244
+          name: KitchenWaterValve_A24
+          type: water_valve
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A24_KIT_VALVE
+            name: VALVE_CONTROL
+          states:
+          - id: ST_A24_KIT_VALVE_STATE
+            name: VALVE_STATE
+semantics:
+  affects:
+  - from_capability_id: CAP_A24_BR_SHADE
+    to_state_id: ST_A24_BR_SHADE_STATE
+    note: Shade actuation changes shade state.
+  - from_capability_id: CAP_A24_KIT_VALVE
+    to_state_id: ST_A24_KIT_VALVE_STATE
+    note: Valve actuation changes valve state.
+evars: []
+contexts:
+- id: CTX_A24_WEEKDAY
+  name: Weekday
+  scope: apartment
+  scope_id: A24
+states: []
+rules:
+- id: R_A24_BR_1
+  name: Weekday Morning Shade
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A24
+  description: Opens the bedroom shade on weekday mornings.
+  triggers:
+  - id: T_A24_BR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A24_BR_MORNING
+      role: OBSERVE
+  conditions:
+  - id: C_A24_BR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A24_WEEKDAY
+      role: CHECK
+  actions:
+  - id: A_A24_BR_1
+    type: capability_actuation
+    action: OPEN
+    applies_to_device_id: D242
+    targets:
+    - kind: Capability
+      id: CAP_A24_BR_SHADE
+      role: ACTUATE
+- id: R_A24_KIT_1
+  name: Kitchen Leak Shutoff
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A24
+  description: Closes the kitchen water valve when a leak is detected.
+  triggers:
+  - id: T_A24_KIT_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A24_KIT_LEAK
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A24_KIT_1
+    type: capability_actuation
+    action: CLOSE
+    applies_to_device_id: D244
+    targets:
+    - kind: Capability
+      id: CAP_A24_KIT_VALVE
+      role: ACTUATE

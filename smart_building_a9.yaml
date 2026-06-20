@@ -1,0 +1,152 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A9
+      name: Apartment_9
+      category: FamilyWithKids
+      rooms:
+      - id: R91
+        name: Entrance
+        devices:
+        - id: D91
+          name: EntranceMotionSensor_A9
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A9_ENT_MOTION
+            name: MOTION_DETECTED
+        - id: D92
+          name: EntranceDoorLock_A9
+          type: smart_lock
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A9_ENT_LOCK
+            name: LOCK
+          states:
+          - id: ST_A9_ENT_LOCK_STATE
+            name: LOCK_STATE
+        - id: D93
+          name: EntrancePresenceVirtual_A9
+          type: virtual_presence
+          platform: HomeAssistant
+          states:
+          - id: ST_A9_ENT_PRESENCE
+            name: PRESENCE_DETECTED
+      - id: R92
+        name: LivingRoom
+        devices:
+        - id: D94
+          name: LivingRoomRobotVacuum_A9
+          type: robot_vacuum
+          platform: openHAB
+          capabilities:
+          - id: CAP_A9_LR_VACUUM_RUN
+            name: RUN
+          states:
+          - id: ST_A9_LR_VACUUM_RUNNING
+            name: VACUUM_RUNNING
+semantics:
+  affects:
+  - from_capability_id: CAP_A9_ENT_LOCK
+    to_state_id: ST_A9_ENT_LOCK_STATE
+    note: Lock actuation changes entrance door lock state.
+  - from_capability_id: CAP_A9_LR_VACUUM_RUN
+    to_state_id: ST_A9_LR_VACUUM_RUNNING
+    note: Vacuum actuation changes robot vacuum running state.
+  - from_capability_id: CAP_A9_LR_VACUUM_RUN
+    to_state_id: ST_A9_ENT_MOTION
+    note: Robot vacuum movement may be sensed as entrance motion near the open-plan
+      entry.
+evars: []
+contexts:
+- id: CTX_A9_DAYTIME
+  name: Daytime
+  scope: apartment
+  scope_id: A9
+states:
+- id: ST_A9_HOME_OCCUPIED
+  name: HomeOccupied
+  scope: apartment
+  scope_id: A9
+rules:
+- id: R_A9_ENT_1
+  name: Entrance Presence Mirror
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A9
+  description: Marks presence as detected when entrance motion is observed.
+  triggers:
+  - id: T_A9_ENT_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A9_ENT_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A9_ENT_1
+    type: state_update
+    action: SET_TRUE
+    applies_to_device_id: D93
+    targets:
+    - kind: State
+      id: ST_A9_ENT_PRESENCE
+      role: ACTUATE
+- id: R_A9_ENT_2
+  name: Entrance Unlock On Presence
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A9
+  description: Unlocks the entrance door when presence is detected during expected
+    daytime arrival.
+  triggers:
+  - id: T_A9_ENT_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A9_ENT_PRESENCE
+      role: OBSERVE
+  conditions:
+  - id: C_A9_ENT_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A9_DAYTIME
+      role: CHECK
+  actions:
+  - id: A_A9_ENT_2
+    type: capability_actuation
+    action: UNLOCK
+    applies_to_device_id: D92
+    targets:
+    - kind: Capability
+      id: CAP_A9_ENT_LOCK
+      role: ACTUATE
+- id: R_A9_LR_1
+  name: Robot Vacuum Daily Run
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A9
+  description: Runs the robot vacuum for routine afternoon cleaning.
+  triggers: []
+  conditions: []
+  actions:
+  - id: A_A9_LR_1
+    type: capability_actuation
+    action: START
+    applies_to_device_id: D94
+    targets:
+    - kind: Capability
+      id: CAP_A9_LR_VACUUM_RUN
+      role: ACTUATE

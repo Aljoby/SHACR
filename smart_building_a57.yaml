@@ -1,0 +1,173 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A57
+      name: Apartment_57
+      category: FamilyWithKids
+      rooms:
+      - id: R571
+        name: Nursery
+        devices:
+        - id: D5711
+          name: NurseryTempSensor_A57
+          type: temperature_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A57_NR_TEMP
+            name: TEMP_READING
+        - id: D5712
+          name: NurseryHeater_A57
+          type: smart_heater
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A57_NR_HEATER
+            name: POWER
+          states:
+          - id: ST_A57_NR_HEATER
+            name: HEATER_POWER
+        - id: D5713
+          name: NurseryFan_A57
+          type: ceiling_fan
+          platform: openHAB
+          capabilities:
+          - id: CAP_A57_NR_FAN
+            name: POWER
+          states:
+          - id: ST_A57_NR_FAN
+            name: FAN_POWER
+        - id: D5714
+          name: NurseryHumidifier_A57
+          type: humidifier
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A57_NR_HUMID
+            name: POWER
+          states:
+          - id: ST_A57_NR_HUMID
+            name: HUMID_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A57_NR_HEATER
+    to_state_id: ST_A57_NR_HEATER
+    note: Heater actuation changes heater state.
+  - from_capability_id: CAP_A57_NR_FAN
+    to_state_id: ST_A57_NR_FAN
+    note: Fan actuation changes fan state.
+  - from_capability_id: CAP_A57_NR_HUMID
+    to_state_id: ST_A57_NR_HUMID
+    note: Humidifier actuation changes humidifier state.
+  - from_capability_id: CAP_A57_NR_HEATER
+    to_evar_id: EV_A57_NR_TEMP
+    note: Heater operation increases temperature.
+  - from_capability_id: CAP_A57_NR_FAN
+    to_evar_id: EV_A57_NR_TEMP
+    note: Fan operation creates cooling sensation.
+  - from_capability_id: CAP_A57_NR_HUMID
+    to_evar_id: EV_A57_NR_TEMP
+    note: Humidifier slightly cools the room via evaporation.
+evars:
+- id: EV_A57_NR_TEMP
+  name: NurseryTemperature
+  scope: room
+  scope_id: R571
+contexts: []
+states: []
+rules:
+- id: R_A57_NR_1
+  name: Cold Heater On
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A57
+  description: Turns on nursery heater when temperature is low.
+  triggers:
+  - id: T_A57_NR_1
+    type: state
+    operator: <
+    value: 22
+    targets:
+    - kind: State
+      id: ST_A57_NR_TEMP
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A57_NR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D5712
+    targets:
+    - kind: Capability
+      id: CAP_A57_NR_HEATER
+      role: ACTUATE
+- id: R_A57_NR_2
+  name: Hot Fan On
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A57
+  description: Turns on fan when temperature exceeds 24 - semantic conflict with heater via EVar.
+  triggers:
+  - id: T_A57_NR_2
+    type: evar
+    operator: '>'
+    value: 24
+    targets:
+    - kind: EVar
+      id: EV_A57_NR_TEMP
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A57_NR_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D5713
+    targets:
+    - kind: Capability
+      id: CAP_A57_NR_FAN
+      role: ACTUATE
+- id: R_A57_NR_3
+  name: Always On Humidifier
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A57
+  description: Keeps humidifier on for baby comfort - semantic conflict with heater because humidifier slightly affects EVar temperature.
+  triggers: []
+  conditions: []
+  actions:
+  - id: A_A57_NR_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D5714
+    targets:
+    - kind: Capability
+      id: CAP_A57_NR_HUMID
+      role: ACTUATE
+- id: R_A57_NR_4
+  name: Heater On Disable Fan
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A57
+  description: Turns off fan when heater is on - logical conflict if temperature crosses both thresholds.
+  triggers:
+  - id: T_A57_NR_4
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A57_NR_HEATER
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A57_NR_4
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D5713
+    targets:
+    - kind: Capability
+      id: CAP_A57_NR_FAN
+      role: ACTUATE

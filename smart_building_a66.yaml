@@ -1,0 +1,103 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A66
+      name: Apartment_66
+      category: FitnessEnthusiast
+      rooms:
+      - id: R661
+        name: HomeGym
+        devices:
+        - id: D661
+          name: GymMotionSensor_A66
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A66_GM_MOTION
+            name: MOTION_DETECTED
+        - id: D662
+          name: GymFan_A66
+          type: ceiling_fan
+          platform: openHAB
+          capabilities:
+          - id: CAP_A66_GM_FAN
+            name: POWER
+          states:
+          - id: ST_A66_GM_FAN_POWER
+            name: FAN_POWER
+        - id: D663
+          name: GymLight_A66
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A66_GM_LIGHT
+            name: POWER
+          states:
+          - id: ST_A66_GM_LIGHT_POWER
+            name: LIGHT_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A66_GM_FAN
+    to_state_id: ST_A66_GM_FAN_POWER
+    note: Fan power actuation changes fan state.
+  - from_capability_id: CAP_A66_GM_LIGHT
+    to_state_id: ST_A66_GM_LIGHT_POWER
+    note: Light power actuation changes light state.
+evars: []
+contexts: []
+states: []
+rules:
+- id: R_A66_GM_1
+  name: Workout Motion Light
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A66
+  description: Turns on the gym light when motion is detected.
+  triggers:
+  - id: T_A66_GM_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A66_GM_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A66_GM_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D663
+    targets:
+    - kind: Capability
+      id: CAP_A66_GM_LIGHT
+      role: ACTUATE
+- id: R_A66_GM_2
+  name: Workout Cooling Fan
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A66
+  description: Turns on the gym ceiling fan when motion is detected during a workout session.
+  triggers:
+  - id: T_A66_GM_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A66_GM_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A66_GM_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D662
+    targets:
+    - kind: Capability
+      id: CAP_A66_GM_FAN
+      role: ACTUATE

@@ -1,0 +1,241 @@
+topology:
+  building:
+    id: "B1"
+    name: "SmartBuilding_1"
+    apartments:
+      - id: "A2"
+        name: "Apartment_2"
+        rooms:
+          - id: "R21"
+            name: "LivingRoom"
+            devices:
+              - id: "D21"
+                name: "LivingRoomMotionSensor"
+                type: "motion_sensor"
+                platform: "SmartThings"
+                states:
+                  - id: "ST_LR_MOTION"
+                    name: "MOTION_DETECTED"
+              - id: "D22"
+                name: "LivingRoomLight"
+                type: "smart_light"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_LR_LIGHT_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_LR_LIGHT_POWER"
+                    name: "LIGHT_POWER"
+
+          - id: "R22"
+            name: "Bedroom"
+            devices:
+              - id: "D23"
+                name: "BedroomTemperatureSensor"
+                type: "temperature_sensor"
+                platform: "HomeAssistant"
+                states:
+                  - id: "ST_BR_TEMP"
+                    name: "TEMPERATURE"
+              - id: "D24"
+                name: "BedroomHeater"
+                type: "heater"
+                platform: "SmartThings"
+                capabilities:
+                  - id: "CAP_BR_HEAT_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_BR_HEATER_POWER"
+                    name: "HEATER_POWER"
+
+          - id: "R23"
+            name: "Entrance"
+            devices:
+              - id: "D25"
+                name: "EntranceSmokeSensor"
+                type: "smoke_sensor"
+                platform: "HomeAssistant"
+                states:
+                  - id: "ST_ENT_SMOKE"
+                    name: "SMOKE_DETECTED"
+              - id: "D26"
+                name: "EntranceLight"
+                type: "smart_light"
+                platform: "SmartThings"
+                capabilities:
+                  - id: "CAP_ENT_LIGHT_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_ENT_LIGHT_POWER"
+                    name: "LIGHT_POWER"
+              - id: "D27"
+                name: "EntranceDoorLock"
+                type: "smart_lock"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_ENT_LOCK"
+                    name: "LOCK"
+                states:
+                  - id: "ST_ENT_LOCK_STATE"
+                    name: "LOCK_STATE"
+
+semantics:
+  affects:
+    - from_capability_id: "CAP_LR_LIGHT_POWER"
+      to_state_id: "ST_LR_LIGHT_POWER"
+      note: "Actuating the living room light power changes the living room light state."
+
+    - from_capability_id: "CAP_BR_HEAT_POWER"
+      to_state_id: "ST_BR_HEATER_POWER"
+      note: "Actuating the bedroom heater power changes the heater power state."
+
+    - from_capability_id: "CAP_ENT_LIGHT_POWER"
+      to_state_id: "ST_ENT_LIGHT_POWER"
+      note: "Actuating the entrance light power changes the entrance light state."
+
+    - from_capability_id: "CAP_ENT_LOCK"
+      to_state_id: "ST_ENT_LOCK_STATE"
+      note: "Actuating the entrance lock capability changes the door lock state."
+
+contexts:
+  - id: "CTX_EVENING"
+    name: "Evening"
+    scope: "apartment"
+    scope_id: "A2"
+
+  - id: "CTX_SLEEP_TIME"
+    name: "SleepTime"
+    scope: "apartment"
+    scope_id: "A2"
+
+states:
+  - id: "ST_A2_OCCUPIED"
+    name: "Occupied"
+    scope: "apartment"
+    scope_id: "A2"
+
+rules:
+  - id: "R_A2_LR_1"
+    name: "Living Room Motion Lighting"
+    platform: "SmartThings"
+    applies_in:
+      kind: "Apartment"
+      id: "A2"
+    description: "Turns on the living room light when motion is detected in the evening."
+    triggers:
+      - id: "T_A2_LR_1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_LR_MOTION"
+            role: "OBSERVE"
+    conditions:
+      - id: "C_A2_LR_1"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_EVENING"
+            role: "CHECK"
+    actions:
+      - id: "A_A2_LR_1"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D22"
+        targets:
+          - kind: "Capability"
+            id: "CAP_LR_LIGHT_POWER"
+            role: "ACTUATE"
+
+  - id: "R_A2_BR_1"
+    name: "Bedroom Heater Night Comfort"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A2"
+    description: "Turns on the bedroom heater during sleep time when temperature is low."
+    triggers:
+      - id: "T_A2_BR_1"
+        type: "state"
+        operator: "<"
+        value: 19
+        targets:
+          - kind: "State"
+            id: "ST_BR_TEMP"
+            role: "OBSERVE"
+    conditions:
+      - id: "C_A2_BR_1"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_SLEEP_TIME"
+            role: "CHECK"
+    actions:
+      - id: "A_A2_BR_1"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D24"
+        targets:
+          - kind: "Capability"
+            id: "CAP_BR_HEAT_POWER"
+            role: "ACTUATE"
+
+
+  - id: "R_A2_ENT_2"
+    name: "Smoke Response Lighting"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A2"
+    description: "Turns on the entrance light when smoke is detected."
+    triggers:
+      - id: "T_A2_ENT_2"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_ENT_SMOKE"
+            role: "OBSERVE"
+    conditions: []
+    actions:
+      - id: "A_A2_ENT_2"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D26"
+        targets:
+          - kind: "Capability"
+            id: "CAP_ENT_LIGHT_POWER"
+            role: "ACTUATE"
+
+  - id: "R_A2_ENT_3"
+    name: "Entrance Security Auto Lock"
+    platform: "SmartThings"
+    applies_in:
+      kind: "Apartment"
+      id: "A2"
+    description: "Locks the entrance door when the entrance light turns on."
+    triggers:
+      - id: "T_A2_ENT_3"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_ENT_LIGHT_POWER"
+            role: "OBSERVE"
+    conditions: []
+    actions:
+      - id: "A_A2_ENT_3"
+        type: "capability_actuation"
+        action: "LOCK"
+        applies_to_device_id: "D27"
+        targets:
+          - kind: "Capability"
+            id: "CAP_ENT_LOCK"
+            role: "ACTUATE"

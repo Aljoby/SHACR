@@ -1,0 +1,149 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A48
+      name: Apartment_48
+      category: FamilyWithKids
+      rooms:
+      - id: R481
+        name: Bedroom
+        devices:
+        - id: D4811
+          name: BedroomHeater_A48
+          type: smart_heater
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A48_BR_HEATER
+            name: POWER
+          states:
+          - id: ST_A48_BR_HEATER
+            name: HEATER_POWER
+        - id: D4812
+          name: BedroomWindow_A48
+          type: smart_window
+          platform: openHAB
+          capabilities:
+          - id: CAP_A48_BR_WINDOW
+            name: WINDOW_CONTROL
+          states:
+          - id: ST_A48_BR_WINDOW
+            name: WINDOW_STATE
+        - id: D4813
+          name: BedroomCO2Sensor_A48
+          type: air_quality_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A48_BR_CO2
+            name: CO2_LEVEL
+        - id: D4814
+          name: BedroomTempSensor_A48
+          type: temperature_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A48_BR_TEMP
+            name: TEMP_READING
+semantics:
+  affects:
+  - from_capability_id: CAP_A48_BR_HEATER
+    to_state_id: ST_A48_BR_HEATER
+    note: Heater actuation changes heater state.
+  - from_capability_id: CAP_A48_BR_WINDOW
+    to_state_id: ST_A48_BR_WINDOW
+    note: Window actuation changes window state.
+  - from_capability_id: CAP_A48_BR_HEATER
+    to_evar_id: EV_A48_BR_TEMP
+    note: Heater operation increases bedroom temperature.
+  - from_capability_id: CAP_A48_BR_WINDOW
+    to_evar_id: EV_A48_BR_TEMP
+    note: Open window changes bedroom temperature.
+  - from_capability_id: CAP_A48_BR_WINDOW
+    to_state_id: ST_A48_BR_CO2
+    note: Open window decreases CO2 level.
+evars:
+- id: EV_A48_BR_TEMP
+  name: BedroomTemperature
+  scope: room
+  scope_id: R481
+contexts: []
+states: []
+rules:
+- id: R_A48_BR_1
+  name: Cold Heater On
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A48
+  description: Turns on heater when temperature drops below 19 degrees.
+  triggers:
+  - id: T_A48_BR_1
+    type: state
+    operator: <
+    value: 19
+    targets:
+    - kind: State
+      id: ST_A48_BR_TEMP
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A48_BR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4811
+    targets:
+    - kind: Capability
+      id: CAP_A48_BR_HEATER
+      role: ACTUATE
+- id: R_A48_BR_2
+  name: High CO2 Open Window
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A48
+  description: Opens window when CO2 is high - physical conflict with heater wasting energy through open window.
+  triggers:
+  - id: T_A48_BR_2
+    type: state
+    operator: '>'
+    value: 1200
+    targets:
+    - kind: State
+      id: ST_A48_BR_CO2
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A48_BR_2
+    type: capability_actuation
+    action: OPEN
+    applies_to_device_id: D4812
+    targets:
+    - kind: Capability
+      id: CAP_A48_BR_WINDOW
+      role: ACTUATE
+- id: R_A48_BR_3
+  name: Cold Boost Heater
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A48
+  description: Boosts heater when window is open and temperature still drops - physical conflict creating heating loop.
+  triggers:
+  - id: T_A48_BR_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A48_BR_WINDOW
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A48_BR_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4811
+    targets:
+    - kind: Capability
+      id: CAP_A48_BR_HEATER
+      role: ACTUATE

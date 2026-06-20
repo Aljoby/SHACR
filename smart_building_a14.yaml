@@ -1,0 +1,141 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A14
+      name: Apartment_14
+      category: FamilyWithKids
+      rooms:
+      - id: R141
+        name: LivingRoom
+        devices:
+        - id: D141
+          name: LivingRoomAirQualitySensor_A14
+          type: air_quality_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A14_LR_AIR_QUALITY
+            name: AIR_QUALITY_INDEX
+        - id: D142
+          name: LivingRoomWindowActuator_A14
+          type: smart_window
+          platform: openHAB
+          capabilities:
+          - id: CAP_A14_LR_WINDOW
+            name: WINDOW_CONTROL
+          states:
+          - id: ST_A14_LR_WINDOW_STATE
+            name: WINDOW_STATE
+        - id: D143
+          name: LivingRoomThermostat_A14
+          type: thermostat
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A14_LR_AC_POWER
+            name: POWER
+          states:
+          - id: ST_A14_LR_AC_STATE
+            name: AC_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A14_LR_WINDOW
+    to_state_id: ST_A14_LR_WINDOW_STATE
+    note: Window actuation changes window state.
+  - from_capability_id: CAP_A14_LR_AC_POWER
+    to_state_id: ST_A14_LR_AC_STATE
+    note: AC power actuation changes AC power state.
+  - from_capability_id: CAP_A14_LR_WINDOW
+    to_evar_id: EV_A14_LR_TEMP
+    note: Opening the window changes living room ambient temperature.
+  - from_capability_id: CAP_A14_LR_AC_POWER
+    to_evar_id: EV_A14_LR_TEMP
+    note: Running the AC decreases living room ambient temperature.
+evars:
+- id: EV_A14_LR_TEMP
+  name: LivingRoomAmbientTemperature
+  scope: room
+  scope_id: R141
+contexts: []
+states: []
+rules:
+- id: R_A14_LR_1
+  name: Air Quality Window Ventilation
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A14
+  description: Opens the living room window when air quality becomes poor.
+  triggers:
+  - id: T_A14_LR_1
+    type: state
+    operator: '>'
+    value: 120
+    targets:
+    - kind: State
+      id: ST_A14_LR_AIR_QUALITY
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A14_LR_1
+    type: capability_actuation
+    action: OPEN
+    applies_to_device_id: D142
+    targets:
+    - kind: Capability
+      id: CAP_A14_LR_WINDOW
+      role: ACTUATE
+- id: R_A14_LR_2
+  name: Temperature Cooling Response
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A14
+  description: Turns on the living room AC when ambient temperature rises above the
+    comfort threshold.
+  triggers:
+  - id: T_A14_LR_2
+    type: evar
+    operator: '>'
+    value: 25
+    targets:
+    - kind: EVar
+      id: EV_A14_LR_TEMP
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A14_LR_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D143
+    targets:
+    - kind: Capability
+      id: CAP_A14_LR_AC_POWER
+      role: ACTUATE
+- id: R_A14_LR_3
+  name: Open Window AC Cutoff
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A14
+  description: Turns off the AC when the living room window is open to reduce energy
+    waste.
+  triggers:
+  - id: T_A14_LR_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A14_LR_WINDOW_STATE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A14_LR_3
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D143
+    targets:
+    - kind: Capability
+      id: CAP_A14_LR_AC_POWER
+      role: ACTUATE

@@ -1,0 +1,140 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A52
+      name: Apartment_52
+      category: ElderlyCouple
+      rooms:
+      - id: R521
+        name: LivingRoom
+        devices:
+        - id: D5211
+          name: LivingRoomThermostat_A52
+          type: thermostat
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A52_LR_THERMO
+            name: TEMP_SET
+          states:
+          - id: ST_A52_LR_THERMO
+            name: SETPOINT
+        - id: D5212
+          name: LivingRoomMotion_A52
+          type: motion_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A52_LR_MOTION
+            name: MOTION_DETECTED
+      - id: R522
+        name: Bedroom
+        devices:
+        - id: D5213
+          name: BedroomThermostat_A52
+          type: thermostat
+          platform: openHAB
+          capabilities:
+          - id: CAP_A52_BR_THERMO
+            name: TEMP_SET
+          states:
+          - id: ST_A52_BR_THERMO
+            name: SETPOINT
+semantics:
+  affects:
+  - from_capability_id: CAP_A52_LR_THERMO
+    to_state_id: ST_A52_LR_THERMO
+    note: Thermostat actuation changes setpoint.
+  - from_capability_id: CAP_A52_BR_THERMO
+    to_state_id: ST_A52_BR_THERMO
+    note: Thermostat actuation changes setpoint.
+evars: []
+contexts:
+- id: CTX_A52_AWAY
+  name: Away
+  scope: apartment
+  scope_id: A52
+- id: CTX_A52_BEDTIME
+  name: Bedtime
+  scope: apartment
+  scope_id: A52
+states: []
+rules:
+- id: R_A52_LR_1
+  name: Away Eco Mode Thermostat
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A52
+  description: Sets thermostat to eco mode when away.
+  triggers: []
+  conditions:
+  - id: C_A52_LR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A52_AWAY
+      role: CHECK
+  actions:
+  - id: A_A52_LR_1
+    type: capability_actuation
+    action: SET_ECO
+    applies_to_device_id: D5211
+    targets:
+    - kind: Capability
+      id: CAP_A52_LR_THERMO
+      role: ACTUATE
+- id: R_A52_BR_1
+  name: Bedtime Bedroom Comfort
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A52
+  description: Sets bedroom thermostat to comfort temp at bedtime.
+  triggers: []
+  conditions:
+  - id: C_A52_BR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A52_BEDTIME
+      role: CHECK
+  actions:
+  - id: A_A52_BR_1
+    type: capability_actuation
+    action: SET_COMFORT
+    applies_to_device_id: D5213
+    targets:
+    - kind: Capability
+      id: CAP_A52_BR_THERMO
+      role: ACTUATE
+- id: R_A52_LR_2
+  name: Motion Living Room Comfort
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A52
+  description: Sets living room thermostat to comfort when motion detected.
+  triggers:
+  - id: T_A52_LR_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A52_LR_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A52_LR_2
+    type: capability_actuation
+    action: SET_COMFORT
+    applies_to_device_id: D5211
+    targets:
+    - kind: Capability
+      id: CAP_A52_LR_THERMO
+      role: ACTUATE

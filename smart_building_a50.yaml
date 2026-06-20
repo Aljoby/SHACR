@@ -1,0 +1,133 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A50
+      name: Apartment_50
+      category: YoungProfessional
+      rooms:
+      - id: R501
+        name: Bedroom
+        devices:
+        - id: D5011
+          name: BedroomMotion_A50
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A50_BR_MOTION
+            name: MOTION_DETECTED
+        - id: D5012
+          name: BedroomLight_A50
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A50_BR_LIGHT
+            name: POWER
+          states:
+          - id: ST_A50_BR_LIGHT
+            name: LIGHT_POWER
+        - id: D5013
+          name: BedroomSpeaker_A50
+          type: smart_speaker
+          platform: openHAB
+          capabilities:
+          - id: CAP_A50_BR_SPEAKER
+            name: PLAY
+          states:
+          - id: ST_A50_BR_SPEAKER
+            name: SPEAKER_STATE
+semantics:
+  affects:
+  - from_capability_id: CAP_A50_BR_LIGHT
+    to_state_id: ST_A50_BR_LIGHT
+    note: Light actuation changes light state.
+  - from_capability_id: CAP_A50_BR_SPEAKER
+    to_state_id: ST_A50_BR_SPEAKER
+    note: Speaker actuation changes speaker state.
+evars: []
+contexts:
+- id: CTX_A50_SLEEP
+  name: SleepMode
+  scope: apartment
+  scope_id: A50
+states: []
+rules:
+- id: R_A50_BR_1
+  name: Motion Bedroom Light
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A50
+  description: Turns on bedroom light when motion is detected.
+  triggers:
+  - id: T_A50_BR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A50_BR_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A50_BR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D5012
+    targets:
+    - kind: Capability
+      id: CAP_A50_BR_LIGHT
+      role: ACTUATE
+- id: R_A50_BR_2
+  name: Sleep Mode Lights Off
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A50
+  description: Turns off bedroom lights in sleep mode - logical conflict if user moves at night.
+  triggers: []
+  conditions:
+  - id: C_A50_BR_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A50_SLEEP
+      role: CHECK
+  actions:
+  - id: A_A50_BR_2
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D5012
+    targets:
+    - kind: Capability
+      id: CAP_A50_BR_LIGHT
+      role: ACTUATE
+- id: R_A50_BR_3
+  name: Motion Wake Speaker
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A50
+  description: Plays announcement on speaker when motion detected - conflict with sleep mode disturbing sleep.
+  triggers:
+  - id: T_A50_BR_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A50_BR_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A50_BR_3
+    type: capability_actuation
+    action: PLAY
+    applies_to_device_id: D5013
+    targets:
+    - kind: Capability
+      id: CAP_A50_BR_SPEAKER
+      role: ACTUATE

@@ -1,0 +1,144 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A68
+      name: Apartment_68
+      category: FamilyWithKids
+      rooms:
+      - id: R681
+        name: LivingRoom
+        devices:
+        - id: D681
+          name: LivingRoomThermostat_A68
+          type: thermostat
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A68_LR_THERMOSTAT
+            name: SET_TEMP
+          states:
+          - id: ST_A68_LR_TEMP_SETPOINT
+            name: TEMP_SETPOINT
+        - id: D682
+          name: LivingRoomOccupancySensor_A68
+          type: occupancy_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A68_LR_OCCUPIED
+            name: ROOM_OCCUPIED
+        - id: D683
+          name: LivingRoomSpaceHeater_A68
+          type: space_heater
+          platform: openHAB
+          capabilities:
+          - id: CAP_A68_LR_HEATER
+            name: POWER
+          states:
+          - id: ST_A68_LR_HEATER_POWER
+            name: HEATER_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A68_LR_THERMOSTAT
+    to_state_id: ST_A68_LR_TEMP_SETPOINT
+    note: Thermostat actuation changes temperature setpoint.
+  - from_capability_id: CAP_A68_LR_HEATER
+    to_state_id: ST_A68_LR_HEATER_POWER
+    note: Heater power actuation changes heater state.
+contexts:
+- id: CTX_A68_NIGHT_SCHEDULE
+  name: NightSchedule
+  scope: apartment
+  scope_id: A68
+evars: []
+states: []
+rules:
+- id: R_A68_LR_1
+  name: Night Schedule Eco Setpoint
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A68
+  description: Sets thermostat to an eco setpoint of 18C during the night schedule. Logical
+    conflict with occupancy override which sets a higher setpoint.
+  triggers: []
+  conditions:
+  - id: C_A68_LR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A68_NIGHT_SCHEDULE
+      role: CHECK
+  actions:
+  - id: A_A68_LR_1
+    type: capability_actuation
+    action: SET_TEMP_18
+    applies_to_device_id: D681
+    targets:
+    - kind: Capability
+      id: CAP_A68_LR_THERMOSTAT
+      role: ACTUATE
+- id: R_A68_LR_2
+  name: Occupancy Comfort Setpoint
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A68
+  description: Sets thermostat to a comfortable 22C when the living room is occupied. Logical
+    conflict with the night eco schedule which assigns a different value to the same setpoint.
+  triggers:
+  - id: T_A68_LR_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A68_LR_OCCUPIED
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A68_LR_2
+    type: capability_actuation
+    action: SET_TEMP_22
+    applies_to_device_id: D681
+    targets:
+    - kind: Capability
+      id: CAP_A68_LR_THERMOSTAT
+      role: ACTUATE
+- id: R_A68_LR_3
+  name: Occupancy Heater Boost
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A68
+  description: Turns on the supplemental space heater when the living room is occupied at night,
+    creating a physical conflict where both heater and thermostat compete to drive room temperature.
+  triggers:
+  - id: T_A68_LR_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A68_LR_OCCUPIED
+      role: OBSERVE
+  conditions:
+  - id: C_A68_LR_3
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A68_NIGHT_SCHEDULE
+      role: CHECK
+  actions:
+  - id: A_A68_LR_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D683
+    targets:
+    - kind: Capability
+      id: CAP_A68_LR_HEATER
+      role: ACTUATE

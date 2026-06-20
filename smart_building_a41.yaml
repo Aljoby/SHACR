@@ -1,0 +1,146 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A41
+      name: Apartment_41
+      category: YoungProfessional
+      rooms:
+      - id: R411
+        name: HomeOffice
+        devices:
+        - id: D4111
+          name: OfficeLight_A41
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A41_OF_LIGHT
+            name: POWER
+          states:
+          - id: ST_A41_OF_LIGHT
+            name: LIGHT_POWER
+        - id: D4112
+          name: OfficeMonitor_A41
+          type: smart_plug
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A41_OF_MONITOR
+            name: POWER
+          states:
+          - id: ST_A41_OF_MONITOR
+            name: MONITOR_POWER
+        - id: D4113
+          name: OfficeMotion_A41
+          type: motion_sensor
+          platform: openHAB
+          states:
+          - id: ST_A41_OF_MOTION
+            name: MOTION_DETECTED
+        - id: D4114
+          name: OfficeAirPurifier_A41
+          type: air_purifier
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A41_OF_PURIFIER
+            name: POWER
+          states:
+          - id: ST_A41_OF_PURIFIER
+            name: PURIFIER_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A41_OF_LIGHT
+    to_state_id: ST_A41_OF_LIGHT
+    note: Light actuation changes light state.
+  - from_capability_id: CAP_A41_OF_MONITOR
+    to_state_id: ST_A41_OF_MONITOR
+    note: Plug actuation changes monitor state.
+  - from_capability_id: CAP_A41_OF_PURIFIER
+    to_state_id: ST_A41_OF_PURIFIER
+    note: Purifier actuation changes purifier state.
+evars: []
+contexts:
+- id: CTX_A41_WORK
+  name: WorkHours
+  scope: apartment
+  scope_id: A41
+states: []
+rules:
+- id: R_A41_OF_1
+  name: Work Hours Lights On
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A41
+  description: Turns on office light during work hours.
+  triggers: []
+  conditions:
+  - id: C_A41_OF_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A41_WORK
+      role: CHECK
+  actions:
+  - id: A_A41_OF_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4111
+    targets:
+    - kind: Capability
+      id: CAP_A41_OF_LIGHT
+      role: ACTUATE
+- id: R_A41_OF_2
+  name: Motion Monitor Wake
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A41
+  description: Powers on the monitor when motion is detected.
+  triggers:
+  - id: T_A41_OF_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A41_OF_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A41_OF_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4112
+    targets:
+    - kind: Capability
+      id: CAP_A41_OF_MONITOR
+      role: ACTUATE
+- id: R_A41_OF_3
+  name: Work Hours Air Purifier
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A41
+  description: Runs air purifier during work hours.
+  triggers: []
+  conditions:
+  - id: C_A41_OF_3
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A41_WORK
+      role: CHECK
+  actions:
+  - id: A_A41_OF_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4114
+    targets:
+    - kind: Capability
+      id: CAP_A41_OF_PURIFIER
+      role: ACTUATE

@@ -1,0 +1,142 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A62
+      name: Apartment_62
+      category: ElderlyCouple
+      rooms:
+      - id: R621
+        name: LivingRoom
+        devices:
+        - id: D6211
+          name: COSensor_A62
+          type: co_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A62_LR_CO
+            name: CO_DETECTED
+        - id: D6212
+          name: AlarmSiren_A62
+          type: alarm_siren
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A62_LR_ALARM
+            name: ALARM_CONTROL
+          states:
+          - id: ST_A62_LR_ALARM
+            name: ALARM_STATE
+        - id: D6213
+          name: WindowActuator_A62
+          type: smart_window
+          platform: openHAB
+          capabilities:
+          - id: CAP_A62_LR_WINDOW
+            name: WINDOW_CONTROL
+          states:
+          - id: ST_A62_LR_WINDOW
+            name: WINDOW_STATE
+        - id: D6214
+          name: Notifier_A62
+          type: notification_hub
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A62_LR_NOTIF
+            name: ALERT
+          states:
+          - id: ST_A62_LR_NOTIF
+            name: NOTIF_STATE
+semantics:
+  affects:
+  - from_capability_id: CAP_A62_LR_ALARM
+    to_state_id: ST_A62_LR_ALARM
+    note: Alarm actuation changes alarm state.
+  - from_capability_id: CAP_A62_LR_WINDOW
+    to_state_id: ST_A62_LR_WINDOW
+    note: Window actuation changes window state.
+  - from_capability_id: CAP_A62_LR_NOTIF
+    to_state_id: ST_A62_LR_NOTIF
+    note: Notifier actuation changes notification state.
+evars: []
+contexts: []
+states: []
+rules:
+- id: R_A62_LR_1
+  name: CO Detected Alarm
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A62
+  description: Triggers alarm when CO is detected.
+  triggers:
+  - id: T_A62_LR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A62_LR_CO
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A62_LR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D6212
+    targets:
+    - kind: Capability
+      id: CAP_A62_LR_ALARM
+      role: ACTUATE
+- id: R_A62_LR_2
+  name: CO Detected Open Window
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A62
+  description: Opens window for ventilation when CO detected.
+  triggers:
+  - id: T_A62_LR_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A62_LR_CO
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A62_LR_2
+    type: capability_actuation
+    action: OPEN
+    applies_to_device_id: D6213
+    targets:
+    - kind: Capability
+      id: CAP_A62_LR_WINDOW
+      role: ACTUATE
+- id: R_A62_LR_3
+  name: CO Detected Notify
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A62
+  description: Sends notification when CO is detected.
+  triggers:
+  - id: T_A62_LR_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A62_LR_CO
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A62_LR_3
+    type: capability_actuation
+    action: SEND_ALERT
+    applies_to_device_id: D6214
+    targets:
+    - kind: Capability
+      id: CAP_A62_LR_NOTIF
+      role: ACTUATE

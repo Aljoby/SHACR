@@ -1,0 +1,103 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A43
+      name: Apartment_43
+      category: FamilyWithKids
+      rooms:
+      - id: R431
+        name: Garage
+        devices:
+        - id: D4311
+          name: GarageDoor_A43
+          type: garage_door
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A43_GR_DOOR
+            name: DOOR_CONTROL
+          states:
+          - id: ST_A43_GR_DOOR
+            name: DOOR_STATE
+        - id: D4312
+          name: GarageLight_A43
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A43_GR_LIGHT
+            name: POWER
+          states:
+          - id: ST_A43_GR_LIGHT
+            name: LIGHT_POWER
+        - id: D4313
+          name: GarageMotion_A43
+          type: motion_sensor
+          platform: openHAB
+          states:
+          - id: ST_A43_GR_MOTION
+            name: MOTION_DETECTED
+semantics:
+  affects:
+  - from_capability_id: CAP_A43_GR_DOOR
+    to_state_id: ST_A43_GR_DOOR
+    note: Door actuation changes door state.
+  - from_capability_id: CAP_A43_GR_LIGHT
+    to_state_id: ST_A43_GR_LIGHT
+    note: Light actuation changes light state.
+evars: []
+contexts: []
+states: []
+rules:
+- id: R_A43_GR_1
+  name: Garage Motion Light
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A43
+  description: Turns on garage light when motion is detected.
+  triggers:
+  - id: T_A43_GR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A43_GR_MOTION
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A43_GR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4312
+    targets:
+    - kind: Capability
+      id: CAP_A43_GR_LIGHT
+      role: ACTUATE
+- id: R_A43_GR_2
+  name: Garage Door Open Light
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A43
+  description: Turns on garage light when garage door opens.
+  triggers:
+  - id: T_A43_GR_2
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A43_GR_DOOR
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A43_GR_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4312
+    targets:
+    - kind: Capability
+      id: CAP_A43_GR_LIGHT
+      role: ACTUATE

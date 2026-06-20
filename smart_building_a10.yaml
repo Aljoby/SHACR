@@ -1,0 +1,121 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A10
+      name: Apartment_10
+      category: FamilyWithKids
+      rooms:
+      - id: R101
+        name: Entrance
+        devices:
+        - id: D101
+          name: DoorContact_Entrance_A10
+          type: door_contact_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A10_ENT_DOOR_OPEN
+            name: DOOR_OPEN
+        - id: D102
+          name: EntranceLight_A10
+          type: smart_light
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A10_ENT_LIGHT_POWER
+            name: POWER
+          states:
+          - id: ST_A10_ENT_LIGHT_POWER
+            name: LIGHT_POWER
+      - id: R102
+        name: Hallway
+        devices:
+        - id: D103
+          name: HallwaySecurityCamera_A10
+          type: camera
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A10_HAL_CAM_POWER
+            name: POWER
+          - id: CAP_A10_HAL_CAM_RECORD
+            name: RECORD
+          states:
+          - id: ST_A10_HAL_CAM_POWER
+            name: CAMERA_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A10_ENT_LIGHT_POWER
+    to_state_id: ST_A10_ENT_LIGHT_POWER
+    note: Light power actuation changes entrance light state.
+  - from_capability_id: CAP_A10_HAL_CAM_POWER
+    to_state_id: ST_A10_HAL_CAM_POWER
+    note: Camera power actuation changes camera power state.
+evars: []
+contexts:
+- id: CTX_A10_EVENING
+  name: Evening
+  scope: apartment
+  scope_id: A10
+states: []
+rules:
+- id: R_A10_ENT_1
+  name: Entrance Welcome Light
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A10
+  description: Turns on the entrance light when the front door opens in the evening.
+  triggers:
+  - id: T_A10_ENT_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A10_ENT_DOOR_OPEN
+      role: OBSERVE
+  conditions:
+  - id: C_A10_ENT_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A10_EVENING
+      role: CHECK
+  actions:
+  - id: A_A10_ENT_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D102
+    targets:
+    - kind: Capability
+      id: CAP_A10_ENT_LIGHT_POWER
+      role: ACTUATE
+- id: R_A10_HAL_1
+  name: Camera Anti-Glare Power Off
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A10
+  description: Turns off the hallway security camera when the entrance light is on
+    to reduce glare.
+  triggers:
+  - id: T_A10_HAL_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A10_ENT_LIGHT_POWER
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A10_HAL_1
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D103
+    targets:
+    - kind: Capability
+      id: CAP_A10_HAL_CAM_POWER
+      role: ACTUATE

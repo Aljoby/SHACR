@@ -1,0 +1,197 @@
+topology:
+  building:
+    id: "B1"
+    name: "SmartBuilding_1"
+    apartments:
+      - id: "A4"
+        name: "Apartment_4"
+        rooms:
+          - id: "R41"
+            name: "Kitchen"
+            devices:
+              - id: "D41"
+                name: "BoschWaterLeakSensor_Kitchen"
+                type: "water_leak_sensor"
+                platform: "openHAB"
+                states:
+                  - id: "ST_A4_KIT_WATER_LEAK"
+                    name: "WATER_LEAK_DETECTED"
+              - id: "D42"
+                name: "SmartWaterValve_Kitchen"
+                type: "water_valve"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_A4_KIT_VALVE"
+                    name: "VALVE_CONTROL"
+                states:
+                  - id: "ST_A4_KIT_VALVE_STATE"
+                    name: "VALVE_STATE"
+
+          - id: "R42"
+            name: "LivingRoom"
+            devices:
+              - id: "D43"
+                name: "AeotecMultiSensor_LivingRoom"
+                type: "multisensor"
+                platform: "SmartThings"
+                states:
+                  - id: "ST_A4_LR_ILLUMINANCE"
+                    name: "ILLUMINANCE"
+              - id: "D44"
+                name: "LivingRoomFloorLamp"
+                type: "smart_light"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_A4_LR_LAMP_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_A4_LR_LAMP_POWER"
+                    name: "LAMP_POWER"
+
+          - id: "R43"
+            name: "Bedroom"
+            devices:
+              - id: "D45"
+                name: "BedroomMorningClock"
+                type: "virtual_clock"
+                platform: "HomeAssistant"
+                states:
+                  - id: "ST_A4_BR_MORNING_TIME"
+                    name: "MORNING_TIME"
+              - id: "D46"
+                name: "SomfyRollerShade_Bedroom"
+                type: "smart_blind"
+                platform: "openHAB"
+                capabilities:
+                  - id: "CAP_A4_BR_SHADE"
+                    name: "SHADE_CONTROL"
+                states:
+                  - id: "ST_A4_BR_SHADE_STATE"
+                    name: "SHADE_STATE"
+
+semantics:
+  affects:
+    - from_capability_id: "CAP_A4_KIT_VALVE"
+      to_state_id: "ST_A4_KIT_VALVE_STATE"
+      note: "Valve actuation changes kitchen valve state."
+    - from_capability_id: "CAP_A4_LR_LAMP_POWER"
+      to_state_id: "ST_A4_LR_LAMP_POWER"
+      note: "Lamp power actuation changes living room lamp state."
+    - from_capability_id: "CAP_A4_BR_SHADE"
+      to_state_id: "ST_A4_BR_SHADE_STATE"
+      note: "Shade actuation changes bedroom shade state."
+
+contexts:
+  - id: "CTX_A4_EVENING"
+    name: "Evening"
+    scope: "apartment"
+    scope_id: "A4"
+
+  - id: "CTX_A4_WEEKDAY"
+    name: "Weekday"
+    scope: "apartment"
+    scope_id: "A4"
+
+states:
+  - id: "ST_A4_HOME_MODE"
+    name: "HomeMode"
+    scope: "apartment"
+    scope_id: "A4"
+
+rules:
+  - id: "R_A4_KIT_1"
+    name: "Kitchen Leak Shutoff"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A4"
+    description: "Closes the kitchen water valve when a leak is detected."
+    triggers:
+      - id: "T_A4_KIT_1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A4_KIT_WATER_LEAK"
+            role: "OBSERVE"
+    conditions: []
+    actions:
+      - id: "A_A4_KIT_1"
+        type: "capability_actuation"
+        action: "CLOSE"
+        applies_to_device_id: "D42"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A4_KIT_VALVE"
+            role: "ACTUATE"
+
+  - id: "R_A4_LR_1"
+    name: "Living Room Low Light Assist"
+    platform: "SmartThings"
+    applies_in:
+      kind: "Apartment"
+      id: "A4"
+    description: "Turns on the living room floor lamp when illuminance is low in the evening."
+    triggers:
+      - id: "T_A4_LR_1"
+        type: "state"
+        operator: "<"
+        value: 25
+        targets:
+          - kind: "State"
+            id: "ST_A4_LR_ILLUMINANCE"
+            role: "OBSERVE"
+    conditions:
+      - id: "C_A4_LR_1"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_A4_EVENING"
+            role: "CHECK"
+    actions:
+      - id: "A_A4_LR_1"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D44"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A4_LR_LAMP_POWER"
+            role: "ACTUATE"
+
+  - id: "R_A4_BR_1"
+    name: "Bedroom Weekday Morning Shade"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A4"
+    description: "Opens the bedroom shade on weekday mornings."
+    triggers:
+      - id: "T_A4_BR_1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A4_BR_MORNING_TIME"
+            role: "OBSERVE"
+    conditions:
+      - id: "C_A4_BR_1"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_A4_WEEKDAY"
+            role: "CHECK"
+    actions:
+      - id: "A_A4_BR_1"
+        type: "capability_actuation"
+        action: "OPEN"
+        applies_to_device_id: "D46"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A4_BR_SHADE"
+            role: "ACTUATE"

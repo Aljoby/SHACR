@@ -1,0 +1,139 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A64
+      name: Apartment_64
+      category: PlantHobbyist
+      rooms:
+      - id: R641
+        name: Greenhouse
+        devices:
+        - id: D641
+          name: GreenhouseSoilMoistureSensor_A64
+          type: soil_moisture_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A64_GH_SOIL_MOISTURE
+            name: SOIL_MOISTURE_LEVEL
+        - id: D642
+          name: GreenhouseWaterPump_A64
+          type: water_pump
+          platform: openHAB
+          capabilities:
+          - id: CAP_A64_GH_PUMP
+            name: PUMP_RUN
+          states:
+          - id: ST_A64_GH_PUMP_RUNNING
+            name: PUMP_RUNNING
+        - id: D643
+          name: GreenhouseGrowLight_A64
+          type: grow_light
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A64_GH_GROWLIGHT
+            name: POWER
+          states:
+          - id: ST_A64_GH_GROWLIGHT_POWER
+            name: GROWLIGHT_POWER
+        - id: D644
+          name: GreenhouseLightSensor_A64
+          type: light_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A64_GH_LUX
+            name: AMBIENT_LUX
+semantics:
+  affects:
+  - from_capability_id: CAP_A64_GH_PUMP
+    to_state_id: ST_A64_GH_PUMP_RUNNING
+    note: Water pump actuation changes pump running state.
+  - from_capability_id: CAP_A64_GH_PUMP
+    to_state_id: ST_A64_GH_SOIL_MOISTURE
+    note: Running the pump increases soil moisture level.
+  - from_capability_id: CAP_A64_GH_GROWLIGHT
+    to_state_id: ST_A64_GH_GROWLIGHT_POWER
+    note: Grow light power actuation changes grow light state.
+evars: []
+contexts: []
+states: []
+rules:
+- id: R_A64_GH_1
+  name: Low Moisture Watering
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A64
+  description: Turns on the greenhouse water pump when soil moisture drops below threshold.
+  triggers:
+  - id: T_A64_GH_1
+    type: state
+    operator: <
+    value: 30
+    targets:
+    - kind: State
+      id: ST_A64_GH_SOIL_MOISTURE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A64_GH_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D642
+    targets:
+    - kind: Capability
+      id: CAP_A64_GH_PUMP
+      role: ACTUATE
+- id: R_A64_GH_2
+  name: Low Light Growlight On
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A64
+  description: Turns on the grow light when ambient lux falls below the photosynthesis threshold.
+  triggers:
+  - id: T_A64_GH_2
+    type: state
+    operator: <
+    value: 200
+    targets:
+    - kind: State
+      id: ST_A64_GH_LUX
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A64_GH_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D643
+    targets:
+    - kind: Capability
+      id: CAP_A64_GH_GROWLIGHT
+      role: ACTUATE
+- id: R_A64_GH_3
+  name: Bright Light Growlight Off
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A64
+  description: Turns off the grow light when ambient lux is sufficiently high to save energy.
+  triggers:
+  - id: T_A64_GH_3
+    type: state
+    operator: '>'
+    value: 800
+    targets:
+    - kind: State
+      id: ST_A64_GH_LUX
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A64_GH_3
+    type: capability_actuation
+    action: 'OFF'
+    applies_to_device_id: D643
+    targets:
+    - kind: Capability
+      id: CAP_A64_GH_GROWLIGHT
+      role: ACTUATE

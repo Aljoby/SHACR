@@ -1,0 +1,133 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A61
+      name: Apartment_61
+      category: YoungProfessional
+      rooms:
+      - id: R611
+        name: LivingRoom
+        devices:
+        - id: D6111
+          name: LivingRoomLight_A61
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A61_LR_LIGHT_DIM
+            name: DIMMING
+          states:
+          - id: ST_A61_LR_LIGHT_LEVEL
+            name: BRIGHTNESS_LEVEL
+        - id: D6112
+          name: LightSensor_A61
+          type: light_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A61_LR_AMBIENT_LIGHT
+            name: AMBIENT_LIGHT
+        - id: D6113
+          name: TVPlug_A61
+          type: smart_plug
+          platform: openHAB
+          capabilities:
+          - id: CAP_A61_LR_TV
+            name: POWER
+          states:
+          - id: ST_A61_LR_TV
+            name: TV_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A61_LR_LIGHT_DIM
+    to_state_id: ST_A61_LR_LIGHT_LEVEL
+    note: Dimming actuation changes light level.
+  - from_capability_id: CAP_A61_LR_TV
+    to_state_id: ST_A61_LR_TV
+    note: TV plug actuation changes TV state.
+evars: []
+contexts:
+- id: CTX_A61_MOVIE
+  name: MovieMode
+  scope: apartment
+  scope_id: A61
+states: []
+rules:
+- id: R_A61_LR_1
+  name: Dim Ambient Brighten Light
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A61
+  description: Sets light to bright level when ambient is dim.
+  triggers:
+  - id: T_A61_LR_1
+    type: state
+    operator: <
+    value: 100
+    targets:
+    - kind: State
+      id: ST_A61_LR_AMBIENT_LIGHT
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A61_LR_1
+    type: capability_actuation
+    action: SET_BRIGHT
+    applies_to_device_id: D6111
+    targets:
+    - kind: Capability
+      id: CAP_A61_LR_LIGHT_DIM
+      role: ACTUATE
+- id: R_A61_LR_2
+  name: Movie Mode Dim Light
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A61
+  description: Sets light to dim level for movie watching - logical conflict with brightness rule when ambient is dim during movie.
+  triggers: []
+  conditions:
+  - id: C_A61_LR_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A61_MOVIE
+      role: CHECK
+  actions:
+  - id: A_A61_LR_2
+    type: capability_actuation
+    action: SET_DIM
+    applies_to_device_id: D6111
+    targets:
+    - kind: Capability
+      id: CAP_A61_LR_LIGHT_DIM
+      role: ACTUATE
+- id: R_A61_LR_3
+  name: Movie Mode TV On
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A61
+  description: Turns on TV in movie mode.
+  triggers: []
+  conditions:
+  - id: C_A61_LR_3
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A61_MOVIE
+      role: CHECK
+  actions:
+  - id: A_A61_LR_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D6113
+    targets:
+    - kind: Capability
+      id: CAP_A61_LR_TV
+      role: ACTUATE

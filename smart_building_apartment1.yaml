@@ -1,0 +1,125 @@
+# smart_building_apartment1.yaml
+
+topology:
+  building:
+    id: "B1"
+    name: "SmartBuilding_1"
+    apartments:
+      - id: "A1"
+        name: "Apartment_1"
+        rooms:
+          - id: "R1"
+            name: "LivingRoom"
+            devices:
+              - id: "D1"
+                name: "CamSmartPlug"
+                type: "smart_plug"
+                platform: "SmartThings"
+                capabilities:
+                  - id: "CAP_POWER"
+                    name: "POWER"
+              - id: "D2"
+                name: "SecurityCamera"
+                type: "camera"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_RECORD"
+                    name: "RECORD"
+                states:
+                  - id: "ST_CAM_POWER"
+                    name: "CAM_POWER"
+
+semantics:
+  # Physical/logical effect links used for semantic conflict explanation
+  affects:
+    - from_capability_id: "CAP_POWER"
+      to_state_id: "ST_CAM_POWER"
+      note: "Power control on the smart plug affects camera power state."
+
+contexts:
+  - id: "CTX_NIGHT"
+    name: "Night"
+    scope: "apartment"
+    scope_id: "A1"
+
+  - id: "CTX_ENERGY_SAVING_ON"
+    name: "EnergySavingOn"
+    scope: "apartment"
+    scope_id: "A1"
+
+states:
+  - id: "ST_AWAY_MODE"
+    name: "AwayMode"
+    scope: "apartment"
+    scope_id: "A1"
+
+rules:
+  - id: "R_ST"
+    name: "Night Energy Saver"
+    platform: "SmartThings"
+    applies_in:
+      kind: "Apartment"
+      id: "A1"
+    description: "Turns off the camera smart plug when energy-saving mode is enabled."
+    triggers: []
+    conditions:
+      - id: "C_ST1"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_ENERGY_SAVING_ON"
+            role: "CHECK"
+    actions:
+      - id: "A_ST1"
+        type: "capability_actuation"
+        action: "OFF"
+        applies_to_device_id: "D1"
+        targets:
+          - kind: "Capability"
+            id: "CAP_POWER"
+            role: "ACTUATE"
+
+  - id: "R_HA"
+    name: "Night Surveillance"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A1"
+    description: "In Away mode at night, ensures camera is powered and starts recording."
+    triggers: []
+    conditions:
+      - id: "C_HA1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_AWAY_MODE"
+            role: "CHECK"
+      - id: "C_HA2"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_NIGHT"
+            role: "CHECK"
+    actions:
+      - id: "A_HA1"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D1"
+        targets:
+          - kind: "Capability"
+            id: "CAP_POWER"
+            role: "ACTUATE"
+      - id: "A_HA2"
+        type: "capability_actuation"
+        action: "START"
+        applies_to_device_id: "D2"
+        targets:
+          - kind: "Capability"
+            id: "CAP_RECORD"
+            role: "ACTUATE"

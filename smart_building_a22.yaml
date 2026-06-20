@@ -1,0 +1,138 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A22
+      name: Apartment_22
+      category: Bachelor
+      rooms:
+      - id: R221
+        name: LivingRoom
+        devices:
+        - id: D221
+          name: LivingRoomMotionSensor_A22
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A22_LR_MOTION
+            name: MOTION_DETECTED
+        - id: D222
+          name: LivingRoomLamp_A22
+          type: smart_light
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A22_LR_LIGHT_POWER
+            name: POWER
+          states:
+          - id: ST_A22_LR_LIGHT_POWER
+            name: LIGHT_POWER
+      - id: R222
+        name: Bedroom
+        devices:
+        - id: D223
+          name: BedroomTempSensor_A22
+          type: temperature_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A22_BR_TEMP
+            name: TEMPERATURE
+        - id: D224
+          name: BedroomThermostat_A22
+          type: thermostat
+          platform: openHAB
+          capabilities:
+          - id: CAP_A22_BR_HEAT_SETPOINT
+            name: SET_TEMPERATURE
+          states:
+          - id: ST_A22_BR_TARGET_TEMP
+            name: TARGET_TEMPERATURE
+semantics:
+  affects:
+  - from_capability_id: CAP_A22_LR_LIGHT_POWER
+    to_state_id: ST_A22_LR_LIGHT_POWER
+    note: Light actuation changes living room light state.
+  - from_capability_id: CAP_A22_BR_HEAT_SETPOINT
+    to_state_id: ST_A22_BR_TARGET_TEMP
+    note: Thermostat setpoint actuation changes bedroom target temperature state.
+evars: []
+contexts:
+- id: CTX_A22_EVENING
+  name: Evening
+  scope: apartment
+  scope_id: A22
+- id: CTX_A22_SLEEP_TIME
+  name: SleepTime
+  scope: apartment
+  scope_id: A22
+states: []
+rules:
+- id: R_A22_LR_1
+  name: Evening Living Room Light
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A22
+  description: Turns on the living room lamp when motion is detected in the evening.
+  triggers:
+  - id: T_A22_LR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A22_LR_MOTION
+      role: OBSERVE
+  conditions:
+  - id: C_A22_LR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A22_EVENING
+      role: CHECK
+  actions:
+  - id: A_A22_LR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D222
+    targets:
+    - kind: Capability
+      id: CAP_A22_LR_LIGHT_POWER
+      role: ACTUATE
+- id: R_A22_BR_1
+  name: Bedroom Sleep Comfort
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A22
+  description: Sets a comfortable bedroom temperature during sleep time when the room
+    is cold.
+  triggers:
+  - id: T_A22_BR_1
+    type: state
+    operator: <
+    value: 19
+    targets:
+    - kind: State
+      id: ST_A22_BR_TEMP
+      role: OBSERVE
+  conditions:
+  - id: C_A22_BR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A22_SLEEP_TIME
+      role: CHECK
+  actions:
+  - id: A_A22_BR_1
+    type: capability_actuation
+    action: SET_21
+    applies_to_device_id: D224
+    targets:
+    - kind: Capability
+      id: CAP_A22_BR_HEAT_SETPOINT
+      role: ACTUATE

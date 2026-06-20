@@ -1,0 +1,111 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A11
+      name: Apartment_11
+      category: Bachelor
+      rooms:
+      - id: R111
+        name: LivingRoom
+        devices:
+        - id: D111
+          name: LivingRoomMotionSensor_A11
+          type: motion_sensor
+          platform: SmartThings
+          states:
+          - id: ST_A11_LR_MOTION
+            name: MOTION_DETECTED
+        - id: D112
+          name: LivingRoomRobotVacuum_A11
+          type: robot_vacuum
+          platform: openHAB
+          capabilities:
+          - id: CAP_A11_LR_VACUUM_RUN
+            name: RUN
+          states:
+          - id: ST_A11_LR_VACUUM_RUNNING
+            name: VACUUM_RUNNING
+        - id: D113
+          name: LivingRoomAlarmSiren_A11
+          type: alarm_siren
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A11_LR_ALARM
+            name: SIREN
+          states:
+          - id: ST_A11_LR_ALARM_STATE
+            name: ALARM_STATE
+semantics:
+  affects:
+  - from_capability_id: CAP_A11_LR_VACUUM_RUN
+    to_state_id: ST_A11_LR_VACUUM_RUNNING
+    note: Vacuum actuation changes robot vacuum running state.
+  - from_capability_id: CAP_A11_LR_VACUUM_RUN
+    to_state_id: ST_A11_LR_MOTION
+    note: Robot vacuum movement can be sensed as living room motion.
+  - from_capability_id: CAP_A11_LR_ALARM
+    to_state_id: ST_A11_LR_ALARM_STATE
+    note: Alarm actuation changes alarm siren state.
+evars: []
+contexts:
+- id: CTX_A11_AWAY
+  name: Away
+  scope: apartment
+  scope_id: A11
+states: []
+rules:
+- id: R_A11_LR_1
+  name: Away Motion Alarm
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A11
+  description: Triggers the alarm siren when living room motion is detected while
+    the apartment is away.
+  triggers:
+  - id: T_A11_LR_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A11_LR_MOTION
+      role: OBSERVE
+  conditions:
+  - id: C_A11_LR_1
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A11_AWAY
+      role: CHECK
+  actions:
+  - id: A_A11_LR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D113
+    targets:
+    - kind: Capability
+      id: CAP_A11_LR_ALARM
+      role: ACTUATE
+- id: R_A11_LR_2
+  name: Robot Vacuum Daily Run
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A11
+  description: Runs the robot vacuum during routine daytime cleaning.
+  triggers: []
+  conditions: []
+  actions:
+  - id: A_A11_LR_2
+    type: capability_actuation
+    action: START
+    applies_to_device_id: D112
+    targets:
+    - kind: Capability
+      id: CAP_A11_LR_VACUUM_RUN
+      role: ACTUATE

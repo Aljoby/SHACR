@@ -1,0 +1,167 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A70
+      name: Apartment_70
+      category: FamilyWithKids
+      rooms:
+      - id: R701
+        name: Entrance
+        devices:
+        - id: D701
+          name: EntranceSmokeSensor_A70
+          type: smoke_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A70_ENT_SMOKE
+            name: SMOKE_DETECTED
+        - id: D702
+          name: EntranceDoorLock_A70
+          type: smart_lock
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A70_ENT_LOCK
+            name: LOCK
+          states:
+          - id: ST_A70_ENT_LOCK_STATE
+            name: LOCK_STATE
+        - id: D703
+          name: EntranceDeadbolt_A70
+          type: smart_deadbolt
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A70_DEADBOLT_LOCK
+            name: LOCK
+          states:
+          - id: ST_A70_DEADBOLT_STATE
+            name: DEADBOLT_STATE
+
+      - id: R702
+        name: LivingRoom
+        devices:
+        - id: D704
+          name: LivingRoomLight_A70
+          type: smart_light
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A70_LR_LIGHT_POWER
+            name: POWER
+          states:
+          - id: ST_A70_LR_LIGHT_POWER
+            name: LIGHT_POWER
+
+      - id: R703
+        name: Balcony
+        devices:
+        - id: D705
+          name: BalconyDoorLock_A70
+          type: smart_lock
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A70_BAL_LOCK
+            name: LOCK
+          states:
+          - id: ST_A70_BAL_LOCK_STATE
+            name: LOCK_STATE
+
+semantics:
+  affects:
+  - from_capability_id: CAP_A70_ENT_LOCK
+    to_state_id: ST_A70_ENT_LOCK_STATE
+    note: Entrance lock actuation changes entrance lock state.
+  - from_capability_id: CAP_A70_DEADBOLT_LOCK
+    to_state_id: ST_A70_DEADBOLT_STATE
+    note: Deadbolt actuation changes deadbolt lock state.
+  - from_capability_id: CAP_A70_LR_LIGHT_POWER
+    to_state_id: ST_A70_LR_LIGHT_POWER
+    note: Light actuation changes living room light state.
+  - from_capability_id: CAP_A70_BAL_LOCK
+    to_state_id: ST_A70_BAL_LOCK_STATE
+    note: Balcony lock actuation changes balcony door lock state.
+
+evars: []
+
+contexts:
+- id: CTX_A70_EMERGENCY
+  name: EmergencyMode
+  scope: apartment
+  scope_id: A70
+- id: CTX_A70_BREAK_IN_RISK
+  name: BreakInRisk
+  scope: apartment
+  scope_id: A70
+
+states: []
+
+rules:
+- id: R_A70_ENT_1
+  name: Smoke Emergency Unlock
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A70
+  description: Unlocks all entrance locks when smoke is detected for emergency evacuation.
+  triggers:
+  - id: T_A70_ENT_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A70_ENT_SMOKE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A70_ENT_1
+    type: capability_actuation
+    action: UNLOCK
+    applies_to_device_id: D702
+    targets:
+    - kind: Capability
+      id: CAP_A70_ENT_LOCK
+      role: ACTUATE
+  - id: A_A70_ENT_2
+    type: capability_actuation
+    action: UNLOCK
+    applies_to_device_id: D703
+    targets:
+    - kind: Capability
+      id: CAP_A70_DEADBOLT_LOCK
+      role: ACTUATE
+
+- id: R_A70_SAFE_1
+  name: Safe Evacuation Lighting
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A70
+  description: Turns on interior lighting and unlocks balcony access during emergency mode.
+  triggers:
+  - id: T_A70_SAFE_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A70_ENT_SMOKE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A70_SAFE_1
+    type: capability_actuation
+    action: ON
+    applies_to_device_id: D704
+    targets:
+    - kind: Capability
+      id: CAP_A70_LR_LIGHT_POWER
+      role: ACTUATE
+  - id: A_A70_SAFE_2
+    type: capability_actuation
+    action: UNLOCK
+    applies_to_device_id: D705
+    targets:
+    - kind: Capability
+      id: CAP_A70_BAL_LOCK
+      role: ACTUATE

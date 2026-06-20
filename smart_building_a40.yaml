@@ -1,0 +1,163 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A40
+      name: Apartment_40
+      category: FamilyWithKids
+      rooms:
+      - id: R401
+        name: Entrance
+        devices:
+        - id: D4011
+          name: SmartLock_A40
+          type: smart_lock
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A40_EN_LOCK
+            name: LOCK_CONTROL
+          states:
+          - id: ST_A40_EN_LOCK
+            name: LOCK_STATE
+        - id: D4012
+          name: AlarmSystem_A40
+          type: alarm_siren
+          platform: HomeAssistant
+          capabilities:
+          - id: CAP_A40_EN_ALARM
+            name: ALARM_CONTROL
+          states:
+          - id: ST_A40_EN_ALARM
+            name: ALARM_STATE
+        - id: D4013
+          name: SmokeDetector_A40
+          type: smoke_sensor
+          platform: openHAB
+          states:
+          - id: ST_A40_EN_SMOKE
+            name: SMOKE_DETECTED
+semantics:
+  affects:
+  - from_capability_id: CAP_A40_EN_LOCK
+    to_state_id: ST_A40_EN_LOCK
+    note: Lock actuation changes lock state.
+  - from_capability_id: CAP_A40_EN_ALARM
+    to_state_id: ST_A40_EN_ALARM
+    note: Alarm actuation changes alarm state.
+evars: []
+contexts:
+- id: CTX_A40_AWAY
+  name: Away
+  scope: apartment
+  scope_id: A40
+- id: CTX_A40_NIGHT
+  name: Night
+  scope: apartment
+  scope_id: A40
+states: []
+rules:
+- id: R_A40_EN_1
+  name: Smoke Emergency Unlock
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A40
+  description: Unlocks front door when smoke is detected for safe evacuation.
+  triggers:
+  - id: T_A40_EN_1
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A40_EN_SMOKE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A40_EN_1
+    type: capability_actuation
+    action: UNLOCK
+    applies_to_device_id: D4011
+    targets:
+    - kind: Capability
+      id: CAP_A40_EN_LOCK
+      role: ACTUATE
+- id: R_A40_EN_2
+  name: Away Auto Lock
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A40
+  description: Locks the door when nobody is home - logical conflict with smoke unlock when both happen simultaneously.
+  triggers: []
+  conditions:
+  - id: C_A40_EN_2
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A40_AWAY
+      role: CHECK
+  actions:
+  - id: A_A40_EN_2
+    type: capability_actuation
+    action: LOCK
+    applies_to_device_id: D4011
+    targets:
+    - kind: Capability
+      id: CAP_A40_EN_LOCK
+      role: ACTUATE
+- id: R_A40_EN_3
+  name: Smoke Alarm Activate
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A40
+  description: Activates alarm when smoke is detected.
+  triggers:
+  - id: T_A40_EN_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A40_EN_SMOKE
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A40_EN_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D4012
+    targets:
+    - kind: Capability
+      id: CAP_A40_EN_ALARM
+      role: ACTUATE
+- id: R_A40_EN_4
+  name: Night Lock Down
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A40
+  description: Ensures door is locked at night - conflict with smoke unlock if smoke happens at night.
+  triggers: []
+  conditions:
+  - id: C_A40_EN_4
+    type: context
+    operator: ==
+    value: true
+    targets:
+    - kind: Context
+      id: CTX_A40_NIGHT
+      role: CHECK
+  actions:
+  - id: A_A40_EN_4
+    type: capability_actuation
+    action: LOCK
+    applies_to_device_id: D4011
+    targets:
+    - kind: Capability
+      id: CAP_A40_EN_LOCK
+      role: ACTUATE

@@ -1,0 +1,139 @@
+topology:
+  building:
+    id: B1
+    name: SmartBuilding_1
+    apartments:
+    - id: A33
+      name: Apartment_33
+      category: ElderlyCouple
+      rooms:
+      - id: R331
+        name: LivingRoom
+        devices:
+        - id: D3311
+          name: LivingRoomHumiditySensor_A33
+          type: humidity_sensor
+          platform: HomeAssistant
+          states:
+          - id: ST_A33_LR_HUMIDITY
+            name: HUMIDITY_LEVEL
+        - id: D3312
+          name: LivingRoomHumidifier_A33
+          type: humidifier
+          platform: SmartThings
+          capabilities:
+          - id: CAP_A33_LR_HUMIDIFIER
+            name: POWER
+          states:
+          - id: ST_A33_LR_HUMIDIFIER
+            name: HUMIDIFIER_POWER
+        - id: D3313
+          name: LivingRoomDehumidifier_A33
+          type: dehumidifier
+          platform: openHAB
+          capabilities:
+          - id: CAP_A33_LR_DEHUMIDIFIER
+            name: POWER
+          states:
+          - id: ST_A33_LR_DEHUMIDIFIER
+            name: DEHUMIDIFIER_POWER
+semantics:
+  affects:
+  - from_capability_id: CAP_A33_LR_HUMIDIFIER
+    to_state_id: ST_A33_LR_HUMIDIFIER
+    note: Humidifier actuation changes humidifier state.
+  - from_capability_id: CAP_A33_LR_DEHUMIDIFIER
+    to_state_id: ST_A33_LR_DEHUMIDIFIER
+    note: Dehumidifier actuation changes dehumidifier state.
+  - from_capability_id: CAP_A33_LR_HUMIDIFIER
+    to_evar_id: EV_A33_LR_HUMIDITY
+    note: Humidifier increases ambient humidity.
+  - from_capability_id: CAP_A33_LR_DEHUMIDIFIER
+    to_evar_id: EV_A33_LR_HUMIDITY
+    note: Dehumidifier decreases ambient humidity.
+evars:
+- id: EV_A33_LR_HUMIDITY
+  name: LivingRoomHumidity
+  scope: room
+  scope_id: R331
+contexts: []
+states: []
+rules:
+- id: R_A33_LR_1
+  name: Dry Air Humidify
+  platform: SmartThings
+  applies_in:
+    kind: Apartment
+    id: A33
+  description: Turns on humidifier when humidity falls below 40 percent.
+  triggers:
+  - id: T_A33_LR_1
+    type: state
+    operator: <
+    value: 40
+    targets:
+    - kind: State
+      id: ST_A33_LR_HUMIDITY
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A33_LR_1
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3312
+    targets:
+    - kind: Capability
+      id: CAP_A33_LR_HUMIDIFIER
+      role: ACTUATE
+- id: R_A33_LR_2
+  name: Damp Air Dehumidify
+  platform: openHAB
+  applies_in:
+    kind: Apartment
+    id: A33
+  description: Turns on dehumidifier when humidity exceeds 60 percent - semantic conflict with humidifier rule via shared EVar.
+  triggers:
+  - id: T_A33_LR_2
+    type: evar
+    operator: '>'
+    value: 60
+    targets:
+    - kind: EVar
+      id: EV_A33_LR_HUMIDITY
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A33_LR_2
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3313
+    targets:
+    - kind: Capability
+      id: CAP_A33_LR_DEHUMIDIFIER
+      role: ACTUATE
+- id: R_A33_LR_3
+  name: Comfort Humidify Always
+  platform: HomeAssistant
+  applies_in:
+    kind: Apartment
+    id: A33
+  description: Keeps humidifier on when dehumidifier is also active - semantic and physical conflict via humidity EVar.
+  triggers:
+  - id: T_A33_LR_3
+    type: state
+    operator: ==
+    value: true
+    targets:
+    - kind: State
+      id: ST_A33_LR_DEHUMIDIFIER
+      role: OBSERVE
+  conditions: []
+  actions:
+  - id: A_A33_LR_3
+    type: capability_actuation
+    action: 'ON'
+    applies_to_device_id: D3312
+    targets:
+    - kind: Capability
+      id: CAP_A33_LR_HUMIDIFIER
+      role: ACTUATE

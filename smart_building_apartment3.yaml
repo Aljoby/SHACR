@@ -1,0 +1,210 @@
+topology:
+  building:
+    id: "B1"
+    name: "SmartBuilding_1"
+    apartments:
+      - id: "A3"
+        name: "Apartment_3"
+        rooms:
+          - id: "R31"
+            name: "LivingRoom"
+            devices:
+              - id: "D31"
+                name: "SmartThingsMotionSensor_LivingRoom"
+                type: "motion_sensor"
+                platform: "SmartThings"
+                states:
+                  - id: "ST_A3_LR_MOTION"
+                    name: "MOTION_DETECTED"
+              - id: "D32"
+                name: "PhilipsHueBulb_LivingRoom"
+                type: "smart_light"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_A3_LR_LIGHT_POWER"
+                    name: "POWER"
+                states:
+                  - id: "ST_A3_LR_LIGHT_POWER"
+                    name: "LIGHT_POWER"
+
+          - id: "R32"
+            name: "Bedroom"
+            devices:
+              - id: "D33"
+                name: "BedroomTempSensor_A3"
+                type: "temperature_sensor"
+                platform: "HomeAssistant"
+                states:
+                  - id: "ST_A3_BR_TEMP"
+                    name: "TEMPERATURE"
+              - id: "D34"
+                name: "BoschRoomThermostatII_Bedroom"
+                type: "thermostat"
+                platform: "openHAB"
+                capabilities:
+                  - id: "CAP_A3_BR_HEAT_SETPOINT"
+                    name: "SET_TEMPERATURE"
+                states:
+                  - id: "ST_A3_BR_HEAT_SETPOINT"
+                    name: "TARGET_TEMPERATURE"
+
+          - id: "R33"
+            name: "Entrance"
+            devices:
+              - id: "D35"
+                name: "BoschDoorWindowContact_Entrance"
+                type: "door_contact_sensor"
+                platform: "openHAB"
+                states:
+                  - id: "ST_A3_ENT_DOOR_CLOSED"
+                    name: "DOOR_CLOSED"
+              - id: "D36"
+                name: "YaleAssureLock_Entrance"
+                type: "smart_lock"
+                platform: "HomeAssistant"
+                capabilities:
+                  - id: "CAP_A3_ENT_LOCK"
+                    name: "LOCK"
+                states:
+                  - id: "ST_A3_ENT_LOCK_STATE"
+                    name: "LOCK_STATE"
+
+semantics:
+  affects:
+    - from_capability_id: "CAP_A3_LR_LIGHT_POWER"
+      to_state_id: "ST_A3_LR_LIGHT_POWER"
+      note: "Light power actuation changes living room light state."
+    - from_capability_id: "CAP_A3_BR_HEAT_SETPOINT"
+      to_state_id: "ST_A3_BR_HEAT_SETPOINT"
+      note: "Thermostat setpoint actuation changes bedroom target temperature state."
+    - from_capability_id: "CAP_A3_ENT_LOCK"
+      to_state_id: "ST_A3_ENT_LOCK_STATE"
+      note: "Lock actuation changes entrance lock state."
+
+contexts:
+  - id: "CTX_A3_EVENING"
+    name: "Evening"
+    scope: "apartment"
+    scope_id: "A3"
+
+  - id: "CTX_A3_SLEEP_TIME"
+    name: "SleepTime"
+    scope: "apartment"
+    scope_id: "A3"
+
+  - id: "CTX_A3_AWAY"
+    name: "Away"
+    scope: "apartment"
+    scope_id: "A3"
+
+states:
+  - id: "ST_A3_OCCUPIED"
+    name: "Occupied"
+    scope: "apartment"
+    scope_id: "A3"
+
+rules:
+  - id: "R_A3_LR_1"
+    name: "Brighten My Path Living Room"
+    platform: "SmartThings"
+    applies_in:
+      kind: "Apartment"
+      id: "A3"
+    description: "Turns on the living room light when motion is detected in the evening."
+    triggers:
+      - id: "T_A3_LR_1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A3_LR_MOTION"
+            role: "OBSERVE"
+    conditions:
+      - id: "C_A3_LR_1"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_A3_EVENING"
+            role: "CHECK"
+    actions:
+      - id: "A_A3_LR_1"
+        type: "capability_actuation"
+        action: "ON"
+        applies_to_device_id: "D32"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A3_LR_LIGHT_POWER"
+            role: "ACTUATE"
+
+  - id: "R_A3_BR_1"
+    name: "Bedroom Sleep Comfort"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A3"
+    description: "Sets a comfortable bedroom temperature during sleep time when room temperature is low."
+    triggers:
+      - id: "T_A3_BR_1"
+        type: "state"
+        operator: "<"
+        value: 19
+        targets:
+          - kind: "State"
+            id: "ST_A3_BR_TEMP"
+            role: "OBSERVE"
+    conditions:
+      - id: "C_A3_BR_1"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_A3_SLEEP_TIME"
+            role: "CHECK"
+    actions:
+      - id: "A_A3_BR_1"
+        type: "capability_actuation"
+        action: "SET_21"
+        applies_to_device_id: "D34"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A3_BR_HEAT_SETPOINT"
+            role: "ACTUATE"
+
+  - id: "R_A3_ENT_1"
+    name: "Entrance Auto Lock When Away"
+    platform: "HomeAssistant"
+    applies_in:
+      kind: "Apartment"
+      id: "A3"
+    description: "Locks the entrance door when the door is closed and the apartment is in Away mode."
+    triggers:
+      - id: "T_A3_ENT_1"
+        type: "state"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "State"
+            id: "ST_A3_ENT_DOOR_CLOSED"
+            role: "OBSERVE"
+    conditions:
+      - id: "C_A3_ENT_1"
+        type: "context"
+        operator: "=="
+        value: true
+        targets:
+          - kind: "Context"
+            id: "CTX_A3_AWAY"
+            role: "CHECK"
+    actions:
+      - id: "A_A3_ENT_1"
+        type: "capability_actuation"
+        action: "LOCK"
+        applies_to_device_id: "D36"
+        targets:
+          - kind: "Capability"
+            id: "CAP_A3_ENT_LOCK"
+            role: "ACTUATE"
