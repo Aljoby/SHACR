@@ -1,0 +1,11 @@
+# Exclude environment configuration files
+*.env
+k.env
+
+# Exclude documentation binaries / presentation slides
+*.pptx
+Implementation_Guide.pptx
+
+# Standard Python cache folders
+__pycache__/
+*.py[cod]
